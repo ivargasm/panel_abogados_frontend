@@ -127,7 +127,9 @@ export async function createCase(caseData: CaseData, url: string) {
         credentials: 'include',
         body: JSON.stringify(caseData),
     });
-    if (!res.ok && res.status === 409) throw new Error('Error al crear el caso: Ya existe un caso con ese ID');
+    // crear diferentes errores 409, 403 con el mensaje que llega del backend
+    if (!res.ok && res.status === 409) throw new Error(`Error al crear el caso: ${await res.text()}`);
+    if (!res.ok && res.status === 403) throw new Error(`Error al crear el caso: ${await res.text()}`);
     return res.json();
 }
 
