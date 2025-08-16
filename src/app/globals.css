@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+  
+}
+
+:root {
+    /* --- Paleta de Colores Temática para Despachos (Modo Claro) --- */
+    /* Usamos oklch para colores consistentes y accesibles. */
+    /* Formato: oklch(Luz Chroma Tono) */
+
+    /* Fondos y Superficies */
+    --background: oklch(0.98 0.01 240); /* Blanco ligeramente azulado, muy limpio */
+    --foreground: oklch(0.21 0.04 258); /* Gris oscuro azulado para texto principal */
+
+    --card: oklch(1 0 0); /* Blanco puro para tarjetas */
+    --card-foreground: var(--foreground);
+
+    --popover: oklch(1 0 0);
+    --popover-foreground: var(--foreground);
+
+    /* Color Primario (Azul Marino Corporativo) */
+    --primary: oklch(0.31 0.08 258); /* Azul marino oscuro para botones y elementos principales */
+    --primary-foreground: oklch(0.98 0.01 240); /* Texto blanco sobre el primario */
+
+    /* Color Secundario (Gris Claro) */
+    --secondary: oklch(0.94 0.02 240); /* Gris claro para elementos de menor jerarquía */
+    --secondary-foreground: oklch(0.31 0.08 258); /* Texto azul oscuro sobre el secundario */
+
+    /* Color Muted (Fondos sutiles) */
+    --muted: oklch(0.94 0.02 240);
+    --muted-foreground: oklch(0.55 0.03 258); /* Texto grisáceo para información secundaria */
+
+    /* Color de Acento (Dorado/Latón) */
+    --accent: oklch(0.91 0.02 240); /* Un fondo muy sutil para el acento */
+    --accent-foreground: oklch(0.72 0.15 85); /* Tono dorado para el texto o íconos de acento */
+
+    /* Colores Funcionales */
+    --destructive: oklch(0.65 0.22 25); /* Rojo para acciones destructivas (eliminar) */
+    --destructive-foreground: oklch(0.98 0.01 240);
+    --success: oklch(0.65 0.18 145); /* Verde para notificaciones de éxito */
+    --success-foreground: oklch(0.98 0.01 240);
+    --warning: oklch(0.75 0.18 85); /* Ámbar para advertencias */
+    --warning-foreground: oklch(0.21 0.04 258);
+
+    /* Bordes y Anillos de Foco */
+    --border: oklch(0.88 0.02 240);
+    --input: oklch(0.88 0.02 240);
+    --ring: oklch(0.72 0.15 85); /* El anillo de foco usará el color de acento dorado */
+
+    /* Radio de los bordes */
+    --radius: 0.5rem;
+  }
+
+.dark {
+    /* --- Paleta de Colores Temática para Despachos (Modo Oscuro) --- */
+
+    /* Fondos y Superficies */
+    --background: oklch(0.15 0.03 258); /* Azul muy oscuro, casi negro */
+    --foreground: oklch(0.91 0.02 240); /* Texto gris claro para el cuerpo */
+
+    --card: oklch(0.21 0.04 258); /* Azul oscuro para tarjetas */
+    --card-foreground: var(--foreground);
+
+    --popover: oklch(0.15 0.03 258);
+    --popover-foreground: var(--foreground);
+
+    /* Color Primario (Azul Marino Corporativo) */
+    --primary: oklch(0.75 0.14 258); /* Un azul más brillante para destacar en modo oscuro */
+    --primary-foreground: oklch(0.15 0.03 258); /* Texto oscuro sobre el primario */
+
+    /* Color Secundario (Gris Oscuro) */
+    --secondary: oklch(0.25 0.04 258);
+    --secondary-foreground: oklch(0.91 0.02 240);
+
+    /* Color Muted (Fondos sutiles) */
+    --muted: oklch(0.25 0.04 258);
+    --muted-foreground: oklch(0.65 0.03 240);
+
+    /* Color de Acento (Dorado/Latón) */
+    --accent: oklch(0.25 0.04 258);
+    --accent-foreground: oklch(0.82 0.17 85); /* Dorado más brillante para destacar */
+
+    /* Colores Funcionales */
+    --destructive: oklch(0.65 0.22 25);
+    --destructive-foreground: oklch(0.98 0.01 240);
+    --success: oklch(0.65 0.18 145);
+    --success-foreground: oklch(0.15 0.03 258);
+    --warning: oklch(0.75 0.18 85);
+    --warning-foreground: oklch(0.15 0.03 258);
+
+    /* Bordes y Anillos de Foco */
+    --border: oklch(0.31 0.05 258);
+    --input: oklch(0.31 0.05 258);
+    --ring: oklch(0.82 0.17 85); /* Anillo de foco dorado */
+  }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
