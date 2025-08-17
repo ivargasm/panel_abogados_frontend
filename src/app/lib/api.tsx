@@ -2,14 +2,13 @@
 // Este archivo centraliza todas las llamadas a la API de FastAPI.
 // Ahora importa los tipos desde un archivo centralizado para mayor orden y mantenibilidad.
 
-import { redirect } from "next/navigation";
 import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus } from "@/app/types"; // Importamos los tipos
 
 // --- API de Autenticación ---
 
 export const fetchUser = async (url: string) => {
     const res = await fetch(`${url}/auth/me`, { credentials: 'include' });
-    if (!res.ok) redirect("/auth/login");;
+    if (!res.ok) throw new Error("Login failed");;
     return res.json();
 };
 
