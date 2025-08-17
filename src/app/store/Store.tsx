@@ -16,7 +16,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     userAuth: false,
-    url: 'http://localhost:8000',
+    // url: 'http://localhost:8000',
+    url: 'https://panel-abogados-backend.onrender.com',
     setUser: (user) => set({ user }),
     loginUser: async (email, password) => {
         // 1. Hacemos el login para obtener la cookie
