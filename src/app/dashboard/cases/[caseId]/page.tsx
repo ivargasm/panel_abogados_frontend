@@ -120,8 +120,8 @@ function TimelineItem({ update, onStatusChange, onEdit }: { update: CaseUpdate, 
         <div className="grid grid-cols-[auto_1fr] gap-x-4">
             {/* Columna del Ícono */}
             <div className="flex flex-col items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-                    <MessageSquare className="h-5 w-5 text-slate-500" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                    <MessageSquare className="h-5 w-5 text-muted-foreground" />
                 </div>
             </div>
 
@@ -130,8 +130,8 @@ function TimelineItem({ update, onStatusChange, onEdit }: { update: CaseUpdate, 
                 {/* Cabecera con autor y menú de acciones */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">{update.created_by.full_name}</p>
-                        <time className="hidden sm:block text-xs text-slate-500 dark:text-slate-400">
+                        <p className="font-semibold text-foreground">{update.created_by.full_name}</p>
+                        <time className="hidden sm:block text-xs text-muted-foreground">
                             {format(new Date(update.created_at), "d LLL yyyy, h:mm a", { locale: es })}
                         </time>
                     </div>
@@ -157,7 +157,7 @@ function TimelineItem({ update, onStatusChange, onEdit }: { update: CaseUpdate, 
                 </div>
 
                 {/* Contenido del avance */}
-                <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap pr-4">
+                <p className="text-sm text-foreground/80 whitespace-pre-wrap pr-4">
                     {update.update_text}
                 </p>
 
@@ -170,7 +170,7 @@ function TimelineItem({ update, onStatusChange, onEdit }: { update: CaseUpdate, 
                         {update.visible_to_client ? <Eye className="mr-1.5 h-3 w-3" /> : <EyeOff className="mr-1.5 h-3 w-3" />}
                         {update.visible_to_client ? 'Visible' : 'Interno'}
                     </Badge>
-                    <time className="block sm:hidden text-xs text-slate-500 dark:text-slate-400">
+                    <time className="block sm:hidden text-xs text-muted-foreground">
                         {format(new Date(update.created_at), "d LLL yyyy, h:mm a", { locale: es })}
                     </time>
                 </div>

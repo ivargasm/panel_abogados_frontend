@@ -23,6 +23,7 @@ export default function NewUpdateForm({ caseId, onUpdateCreated }: { caseId: num
         const updateData: CaseUpdateData = {
             update_text: text,
             visible_to_client: isVisible,
+            status: "Pendiente",
         };
 
         try {

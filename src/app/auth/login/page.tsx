@@ -44,7 +44,7 @@ export default function LoginPage() {
                 router.push("/portal-cliente");
             } else {
                 // Para 'owner' y 'lawyer'
-                router.push("/profile"); 
+                router.push("/dashboard/clients"); 
             }
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -56,20 +56,20 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-white dark:bg-gray-900">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
 
-            {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
             <form onSubmit={handleLogin}>
-                <Card className="w-full max-w-md shadow-lg bg-white dark:bg-gray-800">
+            {error && <p className="text-destructive text-sm mb-2">{error}</p>}
+                <Card className="w-full max-w-md shadow-lg">
                     <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center text-gray-900 dark:text-white">Iniciar sesión</CardTitle>
-                        <CardDescription className="text-center text-gray-500 dark:text-gray-400">
+                        <CardTitle className="text-2xl font-bold text-center">Iniciar sesión</CardTitle>
+                        <CardDescription className="text-center">
                             Ingresa tus credenciales para acceder
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+                            <Label htmlFor="email">
                                 Correo electrónico
                             </Label>
                             <Input
@@ -79,15 +79,15 @@ export default function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                                className=""
                             />
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+                                <Label htmlFor="password">
                                     Contraseña
                                 </Label>
-                                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline dark:text-blue-400">
+                                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="pr-10 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                                    className="pr-10"
                                 />
                                 <Button
                                     type="button"
@@ -110,21 +110,21 @@ export default function LoginPage() {
                                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                                 >
                                     {showPassword ? (
-                                        <EyeOff className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
                                     ) : (
-                                        <Eye className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
                                     )}
                                 </Button>
                             </div>
                         </div>
-                        <Button type="submit" className="w-full bg-gray-500 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-primary/90 text-white">
+                        <Button type="submit" className="w-full">
                             Iniciar sesión
                         </Button>
                     </CardContent>
                     <CardFooter className="flex justify-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                             ¿No tienes una cuenta?{" "}
-                            <Link href="/auth/register" className="text-primary hover:underline dark:text-blue-400">
+                            <Link href="/auth/register" className="text-primary hover:underline">
                                 Regístrate
                             </Link>
                         </p>

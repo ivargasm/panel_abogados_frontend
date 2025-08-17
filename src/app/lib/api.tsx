@@ -241,9 +241,15 @@ export async function getDownloadUrl(documentId: number, url: string): Promise<{
 
 // --- API para Calendario ---
 
-export async function getCalendarEvents(start: string, end: string, url: string) {
+export async function getCalendarEvents(start: string, end: string, url: string, caseId: number | null) {
     // Construimos la URL con los query parameters que espera el backend
     const params = new URLSearchParams({ start, end });
+    
+    // Si se seleccionó un caso, lo añadimos como parámetro
+    if (caseId) {
+        params.append('case_id', String(caseId));
+    }
+
     const res = await fetch(`${url}/api/calendar-events?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener los eventos del calendario');
     return res.json();
@@ -280,6 +286,40 @@ export async function deleteCalendarEvent(eventId: number, url: string) {
         throw new Error('Error al eliminar el evento');
     }
     return res;
+}
+
+export async function downloadCalendarEventIcs(eventId: number, url: string) {
+    const res = await fetch(`${url}/api/calendar-events/${eventId}/download`, {
+        credentials: 'include',
+    });
+
+    if (!res.ok) {
+        throw new Error('No se pudo descargar el evento del calendario');
+    }
+
+    // Obtener el nombre del archivo del header 'Content-Disposition'
+    const disposition = res.headers.get('Content-Disposition');
+    let filename = 'evento.ics'; // Nombre por defecto
+    if (disposition && disposition.includes('attachment')) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches?.[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+        }
+    }
+
+    // Crear un enlace temporal para iniciar la descarga del archivo
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    
+    // Limpiar el enlace temporal
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
 }
 
 // --- API para Invitaciones de Clientes ---

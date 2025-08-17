@@ -84,22 +84,22 @@
     /* --- Paleta de Colores Temática para Despachos (Modo Oscuro) --- */
 
     /* Fondos y Superficies */
-    --background: oklch(0.15 0.03 258); /* Azul muy oscuro, casi negro */
-    --foreground: oklch(0.91 0.02 240); /* Texto gris claro para el cuerpo */
+    --background: #212730; /* Azul muy oscuro, casi negro */
+    --foreground: #eeeeef; /* Texto gris claro para el cuerpo */
 
-    --card: oklch(0.21 0.04 258); /* Azul oscuro para tarjetas */
+    --card: #212730; /* Azul oscuro para tarjetas */
     --card-foreground: var(--foreground);
 
     --popover: oklch(0.15 0.03 258);
     --popover-foreground: var(--foreground);
 
     /* Color Primario (Azul Marino Corporativo) */
-    --primary: oklch(0.75 0.14 258); /* Un azul más brillante para destacar en modo oscuro */
+    --primary: #0299e7; /* Un azul más brillante para destacar en modo oscuro */
     --primary-foreground: oklch(0.15 0.03 258); /* Texto oscuro sobre el primario */
 
     /* Color Secundario (Gris Oscuro) */
-    --secondary: oklch(0.25 0.04 258);
-    --secondary-foreground: oklch(0.91 0.02 240);
+    --secondary: #363b44;
+    --secondary-foreground: #eeeeef;
 
     /* Color Muted (Fondos sutiles) */
     --muted: oklch(0.25 0.04 258);

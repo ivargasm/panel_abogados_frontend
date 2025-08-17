@@ -12,7 +12,7 @@ export default function NavLinks() {
     const pathname = usePathname();
 
     const links = [
-        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/dashboard/clients', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/dashboard/clients', label: 'Clientes', icon: User },
         { href: '/dashboard/cases', label: 'Casos', icon: Briefcase },
         { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
@@ -22,7 +22,7 @@ export default function NavLinks() {
         <TooltipProvider>
             <nav className="flex flex-col items-center gap-4 px-2 sm:py-5 mt-18">
                 <Link
-                    href="/dashboard"
+                    href="/dashboard/clients"
                     className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
                 >
                     <Briefcase className="h-4 w-4 transition-all group-hover:scale-110" />
@@ -36,7 +36,7 @@ export default function NavLinks() {
                                 className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${
                                     pathname === link.href
                                         ? 'bg-accent text-accent-foreground'
-                                        : 'text-muted-foreground hover:text-foreground'
+                                        : 'text-foreground hover:text-foreground'
                                 }`}
                             >
                                 <link.icon className="h-5 w-5" />

@@ -4,7 +4,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Importaciones de FullCalendar y date-fns
@@ -27,7 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 // Importaciones de tu lógica de negocio
 import { useAuthStore } from '@/app/store/Store';
-import { getCases, createCalendarEvent, getCalendarEvents, updateCalendarEvent, deleteCalendarEvent } from '@/app/lib/api';
+import { getCases, createCalendarEvent, getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, downloadCalendarEventIcs } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import { Case, CalendarEventData, CalendarEvent as CalendarEventType } from '@/app/types';
 
@@ -46,6 +46,8 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
         start_time: '09:00',
         status: 'Pendiente',
     });
+    const [isDownloading, setIsDownloading] = useState(false);
+    const { url } = useAuthStore();
 
     useEffect(() => {
         if (event) {
@@ -91,6 +93,18 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
         onFinish();
     };
 
+    const handleDownload = async () => {
+        if (!event) return;
+        setIsDownloading(true);
+        try {
+            await downloadCalendarEventIcs(event.id, url);
+        } catch {
+            toast.error("No se pudo generar el archivo .ics");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -132,7 +146,11 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
                     <SelectTrigger className="col-span-3"><SelectValue placeholder="(Opcional)" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="0">Ninguno</SelectItem>
-                        {cases.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.title}</SelectItem>)}
+                        {cases.map(c => (
+                            <SelectItem key={c.id} value={String(c.id)}>
+                                {c.title} - <span className="text-muted-foreground ml-1">{c.client.full_name}</span>
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
@@ -145,7 +163,7 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
                     {event && ( // Solo mostrar el botón de eliminar si estamos editando
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button type="button" variant="destructive">
+                                <Button type="button" variant="destructive" className='mb-2'>
                                     <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                                 </Button>
                             </AlertDialogTrigger>
@@ -157,6 +175,12 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
+                    )}
+                    {event && (
+                        <Button type="button" variant="outline" onClick={handleDownload} disabled={isDownloading}>
+                            <CalendarPlus className="mr-2 h-4 w-4" />
+                            {isDownloading ? 'Generando...' : 'Añadir a Calendario'}
+                        </Button>
                     )}
                 </div>
                 <div className="flex gap-2">
@@ -173,6 +197,7 @@ export default function CalendarPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEventType | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
+    const [filterCaseId, setFilterCaseId] = useState<number | null>(null);
     const calendarRef = useRef<FullCalendar>(null);
     const { url } = useAuthStore();
 
@@ -188,6 +213,13 @@ export default function CalendarPage() {
         fetchCases();
     }, [url]);
     
+    const handleFilterChange = (caseIdValue: string) => {
+        const newCaseId = Number(caseIdValue) > 0 ? Number(caseIdValue) : null;
+        setFilterCaseId(newCaseId);
+        // Forzamos a FullCalendar a que vuelva a pedir los eventos con el nuevo filtro
+        calendarRef.current?.getApi().refetchEvents();
+    };
+
     const handleDateClick = () => {
         setSelectedEvent(null); // Aseguramos que estamos en modo creación
         setIsModalOpen(true);
@@ -229,7 +261,8 @@ export default function CalendarPage() {
 
     const fetchEvents: EventSourceInput = async (fetchInfo, successCallback, failureCallback) => {
         try {
-            const events: CalendarEventType[] = await getCalendarEvents(fetchInfo.start.toISOString(), fetchInfo.end.toISOString(), url);
+            // Pasamos el `filterCaseId` del estado a la función de la API
+            const events: CalendarEventType[] = await getCalendarEvents(fetchInfo.start.toISOString(), fetchInfo.end.toISOString(), url, filterCaseId);
             const formattedEvents = events.map(event => ({
                 id: String(event.id),
                 title: event.title,
@@ -250,9 +283,24 @@ export default function CalendarPage() {
         <ProtectedRoute>
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold">Calendario</h1>
-                <Button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Evento
-                </Button>
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <Select onValueChange={handleFilterChange}>
+                        <SelectTrigger className="w-full sm:w-[250px]">
+                            <SelectValue placeholder="Filtrar por caso..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="0">Todos los casos</SelectItem>
+                            {cases.map(c => (
+                                <SelectItem key={c.id} value={String(c.id)}>
+                                    {c.title} - <span className="text-muted-foreground ml-1">{c.client.full_name}</span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Evento
+                    </Button>
+                </div>
             </div>
             <Card>
                 <CardContent className="p-4">

@@ -4,7 +4,9 @@
 'use client';
 
 import React from 'react';
-import {  LogOut, UserCircle } from 'lucide-react';
+import { LogOut, UserCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/app/store/Store';
 
 // Importaciones de componentes de shadcn/ui
 import { Button } from '@/components/ui/button';
@@ -24,8 +26,15 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const router = useRouter();
+    const { logout } = useAuthStore();
+
+    const handleLogout = () => {
+        logout();
+        router.push('/auth/login');
+    };
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40 mt-18">
+        <div className="flex min-h-screen w-full flex-col bg-secondary/40">
             <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
                 <NavLinks />
             </aside>
@@ -45,11 +54,11 @@ export default function DashboardLayout({
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>Perfil</DropdownMenuItem>
-                            <DropdownMenuItem>Facturación</DropdownMenuItem>
-                            <DropdownMenuItem>Configuración</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/profile')}>Perfil</DropdownMenuItem>
+                            <DropdownMenuItem disabled>Facturación</DropdownMenuItem>
+                            <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleLogout}>
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Cerrar Sesión
                             </DropdownMenuItem>
