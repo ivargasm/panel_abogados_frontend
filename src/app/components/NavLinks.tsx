@@ -5,24 +5,25 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, LayoutDashboard, Settings, User, Calendar } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Settings, User, Calendar, Star } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function NavLinks() {
     const pathname = usePathname();
 
     const links = [
-        { href: '/dashboard/clients', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/dashboard/clients', label: 'Clientes', icon: User },
         { href: '/dashboard/cases', label: 'Casos', icon: Briefcase },
         { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
+        { href: '/dashboard/billing', label: 'Facturación', icon: Star },
     ];
 
     return (
         <TooltipProvider>
             <nav className="flex flex-col items-center gap-4 px-2 sm:py-5 mt-18">
                 <Link
-                    href="/dashboard/clients"
+                    href="/dashboard"
                     className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
                 >
                     <Briefcase className="h-4 w-4 transition-all group-hover:scale-110" />

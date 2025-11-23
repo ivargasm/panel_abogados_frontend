@@ -377,3 +377,33 @@ export async function getMyCaseDetails(caseId: string, url: string): Promise<Cli
     }
     return res.json();
 }
+
+/**
+ * Llama al backend para crear una sesión de checkout de Stripe.
+ * Devuelve la URL a la que se debe redirigir al usuario para pagar.
+ */
+export async function createCheckoutSession(url: string): Promise<{ checkout_url: string }> {
+    const res = await fetch(`${url}/api/subscriptions/create-checkout-session`, {
+        method: 'POST',
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        throw new Error('No se pudo iniciar la sesión de pago.');
+    }
+    return res.json();
+}
+
+/**
+ * Llama al backend para crear una sesión del portal de cliente de Stripe.
+ * Devuelve la URL a la que se debe redirigir al usuario para gestionar su suscripción.
+ */
+export async function createCustomerPortalSession(url: string): Promise<{ portal_url: string }> {
+    const res = await fetch(`${url}/api/subscriptions/create-customer-portal-session`, {
+        method: 'POST',
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        throw new Error('No se pudo abrir el portal de gestión.');
+    }
+    return res.json();
+}

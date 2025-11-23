@@ -3,7 +3,7 @@ import { login, fetchUser, logout, register } from "../lib/api";
 import { redirect } from 'next/navigation';
 
 interface AuthState {
-    user: { id: string; username: string; email: string; role: string; workspace_id: string } | null;
+    user: { id: string; username: string; email: string; role: string; workspace_id: string; subscription_plan: "free" | "solo" | "firm"; subscription_status: "trialing" | "active" | "past_due" | "canceled"; } | null;
     setUser: (user: AuthState['user']) => void;
     logout: () => void;
     url: string;
@@ -16,8 +16,9 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     userAuth: false,
-    // url: 'http://localhost:8000',
-    url: 'https://panel-abogados-backend.onrender.com',
+    url: 'http://localhost:8000',
+    // url: 'https://panel-abogados-backend.onrender.com',
+    // url: "https://gfncp124-8000.use.devtunnels.ms",
     setUser: (user) => set({ user }),
     loginUser: async (email, password) => {
         // 1. Hacemos el login para obtener la cookie
