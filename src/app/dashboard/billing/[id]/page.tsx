@@ -40,6 +40,9 @@ interface InvoiceDetail {
     due_date: string;
     description: string;
     client_id: number;
+    case?: {
+        title: string;
+    };
     items: InvoiceItem[];
     payments: Payment[];
 }
@@ -189,6 +192,10 @@ export default function InvoiceDetailPage() {
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Descripción:</span>
                             <span className="font-medium">{invoice.description || "Sin descripción"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Caso:</span>
+                            <span className="font-medium">{invoice.case ? invoice.case.title : "N/A"}</span>
                         </div>
                     </CardContent>
                 </Card>

@@ -19,9 +19,16 @@ interface Client {
     full_name: string;
 }
 
+interface Case {
+    id: number;
+    title: string;
+}
+
 export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceModalProps) {
     const [clients, setClients] = useState<Client[]>([]);
+    const [cases, setCases] = useState<Case[]>([]);
     const [clientId, setClientId] = useState("");
+    const [caseId, setCaseId] = useState<string>("no-case");
     const [description, setDescription] = useState("");
     const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
     const [dueDate, setDueDate] = useState("");
@@ -49,6 +56,33 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
         }
     };
 
+    const fetchCases = async (clientId: string) => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cases?client_id=${clientId}`, {
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setCases(data);
+            } else {
+                setCases([]);
+            }
+        } catch (error) {
+            console.error("Error fetching cases:", error);
+            setCases([]);
+        }
+    };
+
+    const handleClientChange = (value: string) => {
+        setClientId(value);
+        setCaseId("no-case"); // Reset case selection
+        if (value) {
+            fetchCases(value);
+        } else {
+            setCases([]);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -71,6 +105,7 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
                 credentials: "include",
                 body: JSON.stringify({
                     client_id: parseInt(clientId),
+                    case_id: caseId && caseId !== "no-case" ? parseInt(caseId) : null,
                     amount: total,
                     due_date: dueDate || null,
                     description,
@@ -96,6 +131,8 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
 
     const resetForm = () => {
         setClientId("");
+        setCaseId("no-case");
+        setCases([]);
         setDescription("");
         setIssueDate(new Date().toISOString().split('T')[0]);
         setDueDate("");
@@ -111,7 +148,7 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <Label htmlFor="client">Cliente *</Label>
-                        <Select value={clientId} onValueChange={setClientId} required>
+                        <Select value={clientId} onValueChange={handleClientChange} required>
                             <SelectTrigger>
                                 <SelectValue placeholder="Selecciona un cliente" />
                             </SelectTrigger>
@@ -119,6 +156,23 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
                                 {clients.map(client => (
                                     <SelectItem key={client.id} value={client.id.toString()}>
                                         {client.full_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div>
+                        <Label htmlFor="case">Caso (Opcional)</Label>
+                        <Select value={caseId} onValueChange={setCaseId} disabled={!clientId}>
+                            <SelectTrigger>
+                                <SelectValue placeholder={!clientId ? "Selecciona un cliente primero" : "Selecciona un caso (opcional)"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="no-case">Sin caso asociado</SelectItem>
+                                {cases.map(c => (
+                                    <SelectItem key={c.id} value={c.id.toString()}>
+                                        {c.title}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
