@@ -2,7 +2,7 @@
 // Este archivo centraliza todas las llamadas a la API de FastAPI.
 // Ahora importa los tipos desde un archivo centralizado para mayor orden y mantenibilidad.
 
-import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus } from "@/app/types"; // Importamos los tipos
+import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus, Invoice, InvoiceData, PaymentData } from "@/app/types"; // Importamos los tipos
 
 // --- API de Autenticación ---
 
@@ -48,7 +48,7 @@ export async function register(username: string, email: string, password: string
     }
 }
 
-export async function forgot_password(url: string, email: string){
+export async function forgot_password(url: string, email: string) {
     const res = await fetch(`${url}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -59,7 +59,7 @@ export async function forgot_password(url: string, email: string){
     return res;
 }
 
-export async function reset_password(url: string, new_password: string, token: string){
+export async function reset_password(url: string, new_password: string, token: string) {
     const res = await fetch(`${url}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -243,7 +243,7 @@ export async function getDownloadUrl(documentId: number, url: string): Promise<{
 export async function getCalendarEvents(start: string, end: string, url: string, caseId: number | null) {
     // Construimos la URL con los query parameters que espera el backend
     const params = new URLSearchParams({ start, end });
-    
+
     // Si se seleccionó un caso, lo añadimos como parámetro
     if (caseId) {
         params.append('case_id', String(caseId));
@@ -315,7 +315,7 @@ export async function downloadCalendarEventIcs(eventId: number, url: string) {
     link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
-    
+
     // Limpiar el enlace temporal
     link.parentNode?.removeChild(link);
     window.URL.revokeObjectURL(downloadUrl);
@@ -404,6 +404,45 @@ export async function createCustomerPortalSession(url: string): Promise<{ portal
     });
     if (!res.ok) {
         throw new Error('No se pudo abrir el portal de gestión.');
+    }
+    return res.json();
+}
+
+// --- API para Facturación ---
+
+export async function getBillingStats(url: string) {
+    const res = await fetch(`${url}/api/billing/stats`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Error al obtener las estadísticas de facturación');
+    return res.json();
+}
+
+export async function getInvoices(url: string): Promise<Invoice[]> {
+    const res = await fetch(`${url}/api/billing/invoices`, { credentials: 'include' });
+    if (!res.ok) throw new Error('Error al obtener las facturas');
+    return res.json();
+}
+
+export async function createInvoice(invoiceData: InvoiceData, url: string) {
+    const res = await fetch(`${url}/api/billing/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(invoiceData),
+    });
+    if (!res.ok) throw new Error('Error al crear la factura');
+    return res.json();
+}
+
+export async function recordPayment(invoiceId: number, paymentData: PaymentData, url: string) {
+    const res = await fetch(`${url}/api/billing/invoices/${invoiceId}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(paymentData),
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Error al registrar el pago');
     }
     return res.json();
 }

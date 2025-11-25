@@ -179,6 +179,8 @@ export type CalendarEventData = {
  */
 export type ClientInviteData = {
     email: string;
+    case_title: string;
+    client_name: string;
 };
 
 /**
@@ -197,4 +199,30 @@ export type AcceptInvitationData = {
     token: string;
     password: string;
     full_name: string;
+};
+
+// --- TIPOS PARA FACTURACIÓN ---
+
+export type Invoice = {
+    id: number;
+    invoice_number: string;
+    amount: number;
+    balance_due: number;
+    status: string;
+    issue_date: string;
+    due_date: string;
+    client_id: number;
+};
+
+export type InvoiceData = {
+    client_id: number;
+    amount: number;
+    description: string;
+    due_date: string | null;
+};
+
+export type PaymentData = {
+    amount: number;
+    method: string;
+    notes: string;
 };

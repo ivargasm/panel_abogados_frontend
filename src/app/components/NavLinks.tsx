@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, LayoutDashboard, Settings, User, Calendar, Star } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Settings, User, Calendar, Star, Zap } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function NavLinks() {
@@ -17,6 +17,7 @@ export default function NavLinks() {
         { href: '/dashboard/cases', label: 'Casos', icon: Briefcase },
         { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
         { href: '/dashboard/billing', label: 'Facturación', icon: Star },
+        { href: '/dashboard/subscription', label: 'Suscripción', icon: Zap },
     ];
 
     return (
@@ -34,11 +35,10 @@ export default function NavLinks() {
                         <TooltipTrigger asChild>
                             <Link
                                 href={link.href}
-                                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${
-                                    pathname === link.href
-                                        ? 'bg-accent text-accent-foreground'
-                                        : 'text-foreground hover:text-foreground'
-                                }`}
+                                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${pathname === link.href
+                                    ? 'bg-accent text-accent-foreground'
+                                    : 'text-foreground hover:text-foreground'
+                                    }`}
                             >
                                 <link.icon className="h-5 w-5" />
                                 <span className="sr-only">{link.label}</span>
@@ -47,15 +47,14 @@ export default function NavLinks() {
                         <TooltipContent side="right">{link.label}</TooltipContent>
                     </Tooltip>
                 ))}
-                 <Tooltip>
+                <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/settings"
-                            className={`mt-auto flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${
-                                pathname === '/dashboard/settings'
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                            className={`mt-auto flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${pathname === '/dashboard/settings'
+                                ? 'bg-accent text-accent-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             <Settings className="h-5 w-5" />
                             <span className="sr-only">Configuración</span>

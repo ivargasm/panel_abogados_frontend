@@ -1,150 +1,101 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useAuthStore } from '@/app/store/Store';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Star, Zap } from "lucide-react";
-import { createCheckoutSession, createCustomerPortalSession } from '@/app/lib/api';
-import { toast } from 'sonner';
-import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import { useRouter, useSearchParams } from 'next/navigation';
-
-const planFeatures = {
-    free: [
-        "Hasta 3 casos activos",
-        "Hasta 5 clientes",
-        "500 MB de almacenamiento",
-        "Portal del cliente",
-        "Calendario de eventos"
-    ],
-    solo: [
-        "Casos activos ilimitados",
-        "Clientes ilimitados",
-        "10 GB de almacenamiento",
-        "Soporte prioritario por correo",
-        "Todas las funciones del plan Básico"
-    ]
-};
+import { Plus } from "lucide-react";
+import InvoiceList from "@/components/billing/InvoiceList";
+import CreateInvoiceModal from "@/components/billing/CreateInvoiceModal";
+import { useAuthStore } from "@/app/store/Store";
+import { getBillingStats } from "@/app/lib/api";
 
 export default function BillingPage() {
-    // Necesitamos obtener el objeto `user` completo del store para leer su plan
-    const { user, url } = useAuthStore();
-    const [isLoading, setIsLoading] = useState(false);
-    // const router = useRouter();
-    const searchParams = useSearchParams();
-    const router = useRouter();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const { user } = useAuthStore();
+    const [stats, setStats] = useState({
+        total_billed: 0,
+        total_collected: 0,
+        total_due: 0,
+        invoice_count: 0
+    });
 
+    const fetchStats = async () => {
+        try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            if (!process.env.NEXT_PUBLIC_API_URL) {
+                console.warn("NEXT_PUBLIC_API_URL is not defined. Using default: http://localhost:8000");
+            }
+            const data = await getBillingStats(apiUrl);
+            setStats(data);
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+        }
+    };
 
     useEffect(() => {
-        // Escuchamos el parámetro de cancelación
-        const paymentStatus = searchParams.get('payment');
-
-        if (paymentStatus === 'canceled') {
-            toast.info('Proceso de pago cancelado', {
-                description: 'Puedes volver a intentarlo cuando quieras desde esta página.',
-            });
-            // Limpiamos la URL
-            router.replace('/dashboard/billing');
-        }
-    }, [searchParams, router]);
-
-    const handleUpgrade = async () => {
-        setIsLoading(true);
-        try {
-            const { checkout_url } = await createCheckoutSession(url);
-            // Redirigimos al usuario a la página de pago de Stripe
-            if (checkout_url) {
-                window.location.href = checkout_url;
-            }
-        } catch {
-            toast.error("Hubo un problema al iniciar el pago. Inténtalo de nuevo.");
-            setIsLoading(false);
-        }
-    };
-
-    const handleManageSubscription = async () => {
-        setIsLoading(true);
-        try {
-            const { portal_url } = await createCustomerPortalSession(url);
-            // Redirigimos al usuario al portal de gestión de Stripe
-            if (portal_url) {
-                window.location.href = portal_url;
-            }
-        } catch {
-            toast.error("Hubo un problema al abrir el portal. Inténtalo de nuevo.");
-            setIsLoading(false);
-        }
-    };
-
-    const currentPlan = user?.subscription_plan || 'free';
-    const isSubscribed = currentPlan === 'solo';
+        fetchStats();
+    }, []);
 
     return (
-        <ProtectedRoute allowedRoles={['owner']}>
-            <div className="container mx-auto p-4 md:p-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold">Suscripción y Facturación</h1>
-                    <p className="text-muted-foreground">Gestiona tu plan y accede a todas las funcionalidades de LexControl.</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    {/* Plan Gratuito */}
-                    <Card className={isSubscribed ? 'opacity-60' : 'border-blue-500 border-2'}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><CheckCircle className="text-gray-400" /> Plan Básico</CardTitle>
-                            <CardDescription>Ideal para empezar a organizar tus primeros casos.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">Gratis</p>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-3">
-                                {planFeatures.free.map(feature => (
-                                    <li key={feature} className="flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            {currentPlan === 'free' && (
-                                <Button variant="outline" disabled>Tu Plan Actual</Button>
-                            )}
-                        </CardFooter>
-                    </Card>
-
-                    {/* Plan Profesional */}
-                    <Card className={isSubscribed ? 'border-green-500 border-2' : ''}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Star className="text-yellow-400" /> Plan Profesional</CardTitle>
-                            <CardDescription>Desbloquea todo el potencial de LexControl sin límites.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">$200 <span className="text-lg font-normal text-muted-foreground">/ mes</span></p>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-3">
-                                {planFeatures.solo.map(feature => (
-                                    <li key={feature} className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-blue-500" />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            {isSubscribed ? (
-                                <Button onClick={handleManageSubscription} disabled={isLoading} className='cursor-pointer'>
-                                    {isLoading ? 'Cargando...' : 'Gestionar Suscripción'}
-                                </Button>
-                            ) : (
-                                <Button onClick={handleUpgrade} disabled={isLoading} className='cursor-pointer'>
-                                    {isLoading ? 'Procesando...' : 'Actualizar a Profesional'}
-                                </Button>
-                            )}
-                        </CardFooter>
-                    </Card>
-                </div>
+        <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold tracking-tight">Facturación Interna</h1>
+                <Button onClick={() => setIsCreateModalOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nueva Factura
+                </Button>
             </div>
-        </ProtectedRoute>
+
+            <div className="grid gap-4 md:grid-cols-3">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Facturado</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">${stats.total_billed.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {stats.invoice_count} facturas generadas
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Cobrado</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">${stats.total_collected.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Ingresos registrados
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">${stats.total_due.toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Saldo pendiente
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 border-b pb-2">
+                    <h2 className="text-lg font-semibold">Facturas</h2>
+                </div>
+                <InvoiceList key={stats.invoice_count} />
+            </div>
+
+            <CreateInvoiceModal
+                isOpen={isCreateModalOpen}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    fetchStats();
+                }}
+            />
+        </div>
     );
 }
-

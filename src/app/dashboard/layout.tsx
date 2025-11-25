@@ -55,7 +55,7 @@ export default function DashboardLayout({
                             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => router.push('/profile')}>Perfil</DropdownMenuItem>
-                            <DropdownMenuItem disabled>Facturación</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push('/dashboard/billing')}>Facturación</DropdownMenuItem>
                             <DropdownMenuItem disabled>Configuración</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleLogout}>
