@@ -3,15 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/app/store/Store';
 import { getMyCases } from '@/app/lib/api';
-import ProtectedRoute from '@/app/components/ProtectedRoutes'; // Reutilizamos tu componente!
+import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
 import { CaseSummary } from '@/app/types';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Briefcase, FileText } from 'lucide-react';
 
-// Mapeo de estatus a colores para los badges
 const statusClasses: { [key: string]: string } = {
     "active": "bg-success/10 text-success border-success/20",
     "on_hold": "bg-warning/10 text-warning border-warning/20",
@@ -19,7 +18,6 @@ const statusClasses: { [key: string]: string } = {
 };
 const defaultStatusClass = "bg-primary/10 text-primary border-primary/20";
 
-// --- Componente de Esqueleto de Carga ---
 const CaseCardSkeleton = () => (
     <Card className="h-full">
         <CardHeader>
@@ -32,8 +30,6 @@ const CaseCardSkeleton = () => (
         </CardContent>
     </Card>
 );
-
-
 
 export default function ClientPortalPage() {
     const { url } = useAuthStore();
@@ -52,16 +48,14 @@ export default function ClientPortalPage() {
                 setLoading(false);
             }
         };
-        
+
         fetchCases();
     }, [url]);
 
     return (
         <ProtectedRoute allowedRoles={['client']}>
-            {/* Contenedor principal con fondo y padding mejorados */}
             <div className="bg-muted/30 min-h-screen w-full md:w-3/4 m-auto">
                 <div className="container mx-auto p-4 sm:p-6 md:p-8">
-                    {/* Cabecera más atractiva con ícono y descripción */}
                     <header className="mb-8">
                         <h1 className="text-3xl font-bold tracking-tight text-foreground">Bienvenido a tu Portal</h1>
                         <p className="text-lg text-muted-foreground mt-1">
@@ -80,7 +74,6 @@ export default function ClientPortalPage() {
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             {cases.map((caseItem) => (
                                 <Link href={`/portal-cliente/casos/${caseItem.id}`} key={caseItem.id} className="block group">
-                                    {/* Tarjeta de Caso Rediseñada */}
                                     <Card className="h-full flex flex-col transition-all duration-300 group-hover:shadow-xl group-hover:border-primary">
                                         <CardHeader className="flex flex-row items-start gap-4 space-y-0">
                                             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
@@ -106,7 +99,6 @@ export default function ClientPortalPage() {
                             ))}
                         </div>
                     ) : (
-                        // Mensaje claro cuando no hay casos
                         <div className="text-center py-16 px-6 border-2 border-dashed rounded-lg">
                             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                             <h3 className="mt-4 text-lg font-medium text-foreground">No tienes casos asignados</h3>

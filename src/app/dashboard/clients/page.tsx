@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 // Importaciones de tu lógica de negocio
 import { useAuthStore } from '@/app/store/Store';
@@ -31,6 +32,7 @@ type Client = {
     phone_number: string | null;
     address: string | null;
     rfc: string | null;
+    can_view_billing: boolean;
 };
 
 // --- Componente del Formulario (Ahora maneja Crear y Editar) ---
@@ -40,7 +42,8 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
         email: '',
         phone_number: '',
         address: '',
-        rfc: ''
+        rfc: '',
+        can_view_billing: false
     });
 
     useEffect(() => {
@@ -51,11 +54,12 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
                 email: client.email || '',
                 phone_number: client.phone_number || '',
                 address: client.address || '',
-                rfc: client.rfc || ''
+                rfc: client.rfc || '',
+                can_view_billing: client.can_view_billing || false
             });
         } else {
             // Si no (modo creación), el formulario está vacío
-            setFormData({ full_name: '', email: '', phone_number: '', address: '', rfc: '' });
+            setFormData({ full_name: '', email: '', phone_number: '', address: '', rfc: '', can_view_billing: false });
         }
     }, [client]);
 
@@ -92,6 +96,19 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="rfc" className="text-right">RFC</Label>
                 <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleInputChange} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="can_view_billing" className="text-right">Ver Facturación</Label>
+                <div className="col-span-3 flex items-center space-x-2">
+                    <Switch
+                        id="can_view_billing"
+                        checked={formData.can_view_billing}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_view_billing: checked }))}
+                    />
+                    <Label htmlFor="can_view_billing" className="text-sm text-muted-foreground cursor-pointer">
+                        Permitir que el cliente vea su facturación en el portal
+                    </Label>
+                </div>
             </div>
             <DialogFooter>
                 <Button type="button" variant="outline" onClick={onFinish}>Cancelar</Button>
