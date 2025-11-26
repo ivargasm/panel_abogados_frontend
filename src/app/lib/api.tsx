@@ -446,3 +446,34 @@ export async function recordPayment(invoiceId: number, paymentData: PaymentData,
     }
     return res.json();
 }
+// --- API de Dashboard ---
+
+export async function getDashboardStats(url: string) {
+    const res = await fetch(`${url}/api/dashboard/stats`, {
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        throw new Error('Error al obtener estadísticas del dashboard');
+    }
+    return res.json();
+}
+
+export async function getRecentActivity(url: string, limit: number = 10) {
+    const res = await fetch(`${url}/api/dashboard/recent-activity?limit=${limit}`, {
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        throw new Error('Error al obtener actividad reciente');
+    }
+    return res.json();
+}
+
+export async function getUpcomingDeadlines(url: string, daysAhead: number = 30) {
+    const res = await fetch(`${url}/api/dashboard/upcoming-deadlines?days_ahead=${daysAhead}`, {
+        credentials: 'include',
+    });
+    if (!res.ok) {
+        throw new Error('Error al obtener vencimientos próximos');
+    }
+    return res.json();
+}

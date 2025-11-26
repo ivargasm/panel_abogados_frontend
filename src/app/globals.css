@@ -29,104 +29,160 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius: var(--radius);
-  
+
 }
 
 :root {
-    /* --- Paleta de Colores Temática para Despachos (Modo Claro) --- */
-    /* Usamos oklch para colores consistentes y accesibles. */
-    /* Formato: oklch(Luz Chroma Tono) */
+  /* --- Paleta de Colores Temática para Despachos (Modo Claro) --- */
+  /* Usamos oklch para colores consistentes y accesibles. */
+  /* Formato: oklch(Luz Chroma Tono) */
 
-    /* Fondos y Superficies */
-    --background: oklch(0.98 0.01 240); /* Blanco ligeramente azulado, muy limpio */
-    --foreground: oklch(0.21 0.04 258); /* Gris oscuro azulado para texto principal */
+  /* Fondos y Superficies */
+  --background: oklch(0.98 0.01 240);
+  /* Blanco ligeramente azulado, muy limpio */
+  --foreground: oklch(0.21 0.04 258);
+  /* Gris oscuro azulado para texto principal */
 
-    --card: oklch(1 0 0); /* Blanco puro para tarjetas */
-    --card-foreground: var(--foreground);
+  --card: oklch(1 0 0);
+  /* Blanco puro para tarjetas */
+  --card-foreground: var(--foreground);
 
-    --popover: oklch(1 0 0);
-    --popover-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
 
-    /* Color Primario (Azul Marino Corporativo) */
-    --primary: oklch(0.31 0.08 258); /* Azul marino oscuro para botones y elementos principales */
-    --primary-foreground: oklch(0.98 0.01 240); /* Texto blanco sobre el primario */
+  /* Color Primario (Azul Marino Corporativo) */
+  --primary: oklch(0.31 0.08 258);
+  /* Azul marino oscuro para botones y elementos principales */
+  --primary-foreground: oklch(0.98 0.01 240);
+  /* Texto blanco sobre el primario */
 
-    /* Color Secundario (Gris Claro) */
-    --secondary: oklch(0.94 0.02 240); /* Gris claro para elementos de menor jerarquía */
-    --secondary-foreground: oklch(0.31 0.08 258); /* Texto azul oscuro sobre el secundario */
+  /* Color Secundario (Gris Claro) */
+  --secondary: oklch(0.94 0.02 240);
+  /* Gris claro para elementos de menor jerarquía */
+  --secondary-foreground: oklch(0.31 0.08 258);
+  /* Texto azul oscuro sobre el secundario */
 
-    /* Color Muted (Fondos sutiles) */
-    --muted: oklch(0.94 0.02 240);
-    --muted-foreground: oklch(0.55 0.03 258); /* Texto grisáceo para información secundaria */
+  /* Color Muted (Fondos sutiles) */
+  --muted: oklch(0.94 0.02 240);
+  --muted-foreground: oklch(0.55 0.03 258);
+  /* Texto grisáceo para información secundaria */
 
-    /* Color de Acento (Dorado/Latón) */
-    --accent: oklch(0.91 0.02 240); /* Un fondo muy sutil para el acento */
-    --accent-foreground: oklch(0.72 0.15 85); /* Tono dorado para el texto o íconos de acento */
+  /* Color de Acento (Dorado/Latón) */
+  --accent: oklch(0.91 0.02 240);
+  /* Un fondo muy sutil para el acento */
+  --accent-foreground: oklch(0.72 0.15 85);
+  /* Tono dorado para el texto o íconos de acento */
 
-    /* Colores Funcionales */
-    --destructive: oklch(0.65 0.22 25); /* Rojo para acciones destructivas (eliminar) */
-    --destructive-foreground: oklch(0.98 0.01 240);
-    --success: oklch(0.65 0.18 145); /* Verde para notificaciones de éxito */
-    --success-foreground: oklch(0.98 0.01 240);
-    --warning: oklch(0.75 0.18 85); /* Ámbar para advertencias */
-    --warning-foreground: oklch(0.21 0.04 258);
+  /* Colores Funcionales */
+  --destructive: oklch(0.65 0.22 25);
+  /* Rojo para acciones destructivas (eliminar) */
+  --destructive-foreground: oklch(0.98 0.01 240);
+  --success: oklch(0.65 0.18 145);
+  /* Verde para notificaciones de éxito */
+  --success-foreground: oklch(0.98 0.01 240);
+  --warning: oklch(0.75 0.18 85);
+  /* Ámbar para advertencias */
+  --warning-foreground: oklch(0.21 0.04 258);
 
-    /* Bordes y Anillos de Foco */
-    --border: oklch(0.88 0.02 240);
-    --input: oklch(0.88 0.02 240);
-    --ring: oklch(0.72 0.15 85); /* El anillo de foco usará el color de acento dorado */
+  /* Dashboard - Colores para Iconos de Actividad */
+  --dashboard-document: oklch(0.55 0.18 240);
+  /* Azul para documentos */
+  --dashboard-status: oklch(0.65 0.18 145);
+  /* Verde para cambios de estado */
+  --dashboard-task: oklch(0.60 0.18 280);
+  /* Púrpura para tareas */
+  --dashboard-message: oklch(0.75 0.18 85);
+  /* Amarillo para mensajes */
 
-    /* Radio de los bordes */
-    --radius: 0.5rem;
-  }
+  /* Dashboard - Badges de Urgencia */
+  --badge-urgent: oklch(0.65 0.22 25);
+  /* Rojo para urgente */
+  --badge-urgent-foreground: oklch(0.98 0.01 240);
+  --badge-soon: oklch(0.75 0.18 85);
+  /* Amarillo para próximo */
+  --badge-soon-foreground: oklch(0.21 0.04 258);
+
+  /* Bordes y Anillos de Foco */
+  --border: oklch(0.88 0.02 240);
+  --input: oklch(0.88 0.02 240);
+  --ring: oklch(0.72 0.15 85);
+  /* El anillo de foco usará el color de acento dorado */
+
+  /* Radio de los bordes */
+  --radius: 0.5rem;
+}
 
 .dark {
-    /* --- Paleta de Colores Temática para Despachos (Modo Oscuro) --- */
+  /* --- Paleta de Colores Temática para Despachos (Modo Oscuro) --- */
 
-    /* Fondos y Superficies */
-    --background: #212730; /* Azul muy oscuro, casi negro */
-    --foreground: #eeeeef; /* Texto gris claro para el cuerpo */
+  /* Fondos y Superficies */
+  --background: #212730;
+  /* Azul muy oscuro, casi negro */
+  --foreground: #eeeeef;
+  /* Texto gris claro para el cuerpo */
 
-    --card: #212730; /* Azul oscuro para tarjetas */
-    --card-foreground: var(--foreground);
+  --card: #212730;
+  /* Azul oscuro para tarjetas */
+  --card-foreground: var(--foreground);
 
-    --popover: oklch(0.15 0.03 258);
-    --popover-foreground: var(--foreground);
+  --popover: oklch(0.15 0.03 258);
+  --popover-foreground: var(--foreground);
 
-    /* Color Primario (Azul Marino Corporativo) */
-    --primary: #0299e7; /* Un azul más brillante para destacar en modo oscuro */
-    --primary-foreground: oklch(0.15 0.03 258); /* Texto oscuro sobre el primario */
+  /* Color Primario (Azul Marino Corporativo) */
+  --primary: #0299e7;
+  /* Un azul más brillante para destacar en modo oscuro */
+  --primary-foreground: oklch(0.15 0.03 258);
+  /* Texto oscuro sobre el primario */
 
-    /* Color Secundario (Gris Oscuro) */
-    --secondary: #363b44;
-    --secondary-foreground: #eeeeef;
+  /* Color Secundario (Gris Oscuro) */
+  --secondary: #363b44;
+  --secondary-foreground: #eeeeef;
 
-    /* Color Muted (Fondos sutiles) */
-    --muted: oklch(0.25 0.04 258);
-    --muted-foreground: oklch(0.65 0.03 240);
+  /* Color Muted (Fondos sutiles) */
+  --muted: oklch(0.25 0.04 258);
+  --muted-foreground: oklch(0.65 0.03 240);
 
-    /* Color de Acento (Dorado/Latón) */
-    --accent: oklch(0.25 0.04 258);
-    --accent-foreground: oklch(0.82 0.17 85); /* Dorado más brillante para destacar */
+  /* Color de Acento (Dorado/Latón) */
+  --accent: oklch(0.25 0.04 258);
+  --accent-foreground: oklch(0.82 0.17 85);
+  /* Dorado más brillante para destacar */
 
-    /* Colores Funcionales */
-    --destructive: oklch(0.65 0.22 25);
-    --destructive-foreground: oklch(0.98 0.01 240);
-    --success: oklch(0.65 0.18 145);
-    --success-foreground: oklch(0.15 0.03 258);
-    --warning: oklch(0.75 0.18 85);
-    --warning-foreground: oklch(0.15 0.03 258);
+  /* Colores Funcionales */
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 240);
+  --success: oklch(0.65 0.18 145);
+  --success-foreground: oklch(0.15 0.03 258);
+  --warning: oklch(0.75 0.18 85);
+  --warning-foreground: oklch(0.15 0.03 258);
 
-    /* Bordes y Anillos de Foco */
-    --border: oklch(0.31 0.05 258);
-    --input: oklch(0.31 0.05 258);
-    --ring: oklch(0.82 0.17 85); /* Anillo de foco dorado */
-  }
+  /* Dashboard - Colores para Iconos de Actividad (Modo Oscuro) */
+  --dashboard-document: oklch(0.65 0.18 240);
+  /* Azul más brillante */
+  --dashboard-status: oklch(0.70 0.18 145);
+  /* Verde más brillante */
+  --dashboard-task: oklch(0.70 0.18 280);
+  /* Púrpura más brillante */
+  --dashboard-message: oklch(0.80 0.18 85);
+  /* Amarillo más brillante */
+
+  /* Dashboard - Badges de Urgencia (Modo Oscuro) */
+  --badge-urgent: oklch(0.70 0.22 25);
+  --badge-urgent-foreground: oklch(0.98 0.01 240);
+  --badge-soon: oklch(0.80 0.18 85);
+  --badge-soon-foreground: oklch(0.15 0.03 258);
+
+  /* Bordes y Anillos de Foco */
+  --border: oklch(0.31 0.05 258);
+  --input: oklch(0.31 0.05 258);
+  --ring: oklch(0.82 0.17 85);
+  /* Anillo de foco dorado */
+}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
