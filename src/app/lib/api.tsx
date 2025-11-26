@@ -209,12 +209,12 @@ export async function getDocumentsForCase(caseId: number, url: string): Promise<
     return res.json();
 }
 
-export async function initiateUpload(caseId: number, fileName: string, fileType: string, url: string): Promise<InitiateUploadResponse> {
+export async function initiateUpload(caseId: number, fileName: string, fileType: string, fileSize: number, url: string): Promise<InitiateUploadResponse> {
     const res = await fetch(`${url}/api/cases/${caseId}/documents/initiate-upload`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ file_name: fileName, file_type: fileType }),
+        body: JSON.stringify({ file_name: fileName, file_type: fileType, file_size_bytes: fileSize }),
     });
     if (!res.ok) throw new Error('No se pudo iniciar la subida del archivo');
     return res.json();

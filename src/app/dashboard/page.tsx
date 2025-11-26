@@ -57,6 +57,12 @@ export default function DashboardPage() {
                         icon={<Calendar className="h-8 w-8 text-yellow-500" />}
                     />
                     <DashboardCard
+                        title="Facturación"
+                        description="Administra tus facturas"
+                        href="/dashboard/billing"
+                        icon={<Calendar className="h-8 w-8 text-yellow-500" />}
+                    />
+                    <DashboardCard
                         title="Suscripción"
                         description="Administra tu plan"
                         href="/dashboard/billing"

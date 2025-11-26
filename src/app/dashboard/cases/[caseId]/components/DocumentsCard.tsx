@@ -45,16 +45,16 @@ export default function DocumentsCard({ caseId }: { caseId: number }) {
         setUploadProgress(0);
         try {
             // 1. Pedir la URL pre-firmada al backend
-            const { upload_url } = await initiateUpload(caseId, file.name, file.type, url);
-            
+            const { upload_url } = await initiateUpload(caseId, file.name, file.type, file.size, url);
+
             // 2. Subir el archivo directamente a S3
             // Nota: El seguimiento del progreso real requiere XHR/Axios.
             // Con fetch, simulamos un progreso simple.
             await uploadFileToS3(upload_url, file);
             setUploadProgress(100);
-            
+
             toast.success(`'${file.name}' subido con éxito.`);
-            
+
             // 3. Refrescar la lista de documentos
             await fetchDocuments();
 
@@ -63,7 +63,7 @@ export default function DocumentsCard({ caseId }: { caseId: number }) {
         } finally {
             setUploadProgress(null);
             // Resetear el input para poder subir el mismo archivo de nuevo
-            if(fileInputRef.current) {
+            if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
         }
