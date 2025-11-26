@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, MoreVertical, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -173,6 +174,7 @@ export default function ClientsPage() {
     const [loadingInvoices, setLoadingInvoices] = useState(false);
 
     const { url } = useAuthStore();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -506,7 +508,7 @@ export default function ClientsPage() {
                                                             </div>
                                                             <div className="grid gap-4">
                                                                 {clientCases.map((caso) => (
-                                                                    <Card key={caso.id} className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                                                    <Card key={caso.id} onClick={() => router.push(`/dashboard/cases/${caso.id}`)} className="hover:bg-accent/50 transition-colors cursor-pointer">
                                                                         <CardHeader>
                                                                             <div className="flex items-start justify-between">
                                                                                 <div className="flex-1">

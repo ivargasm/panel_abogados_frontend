@@ -114,7 +114,8 @@ export async function deleteClient(clientId: number, url: string) {
 // --- API para Casos ---
 
 export async function getCases(url: string, clientId: number | null) {
-    const res = await fetch(`${url}/api/cases?client_id=${clientId}`, { credentials: 'include' });
+    const queryParams = clientId ? `?client_id=${clientId}` : '';
+    const res = await fetch(`${url}/api/cases${queryParams}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener los casos');
     return res.json();
 }
