@@ -1,28 +1,48 @@
 // app/dashboard/clients/page.tsx
-// Versión final de la Fase 1: Gestión completa de Clientes con
-// funcionalidades de Crear, Leer, Actualizar y Eliminar (CRUD).
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, MoreVertical, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 // Importaciones de componentes de shadcn/ui
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Importaciones de tu lógica de negocio
 import { useAuthStore } from '@/app/store/Store';
-import { getClients, createClient, updateClient, deleteClient } from '@/app/lib/api';
+import { getClients, createClient, updateClient, deleteClient, getCases, getInvoices } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
+import type { Case, Document, Invoice } from '@/app/types';
 
 // Definimos el tipo para un cliente
 type Client = {
@@ -32,7 +52,10 @@ type Client = {
     phone_number: string | null;
     address: string | null;
     rfc: string | null;
+    notes: string | null;
     can_view_billing: boolean;
+    created_at?: string;
+    updated_at?: string;
 };
 
 // --- Componente del Formulario (Ahora maneja Crear y Editar) ---
@@ -43,11 +66,11 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
         phone_number: '',
         address: '',
         rfc: '',
+        notes: '',
         can_view_billing: false
     });
 
     useEffect(() => {
-        // Si pasamos un cliente (modo edición), llenamos el formulario
         if (client) {
             setFormData({
                 full_name: client.full_name || '',
@@ -55,15 +78,15 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
                 phone_number: client.phone_number || '',
                 address: client.address || '',
                 rfc: client.rfc || '',
+                notes: client.notes || '',
                 can_view_billing: client.can_view_billing || false
             });
         } else {
-            // Si no (modo creación), el formulario está vacío
-            setFormData({ full_name: '', email: '', phone_number: '', address: '', rfc: '', can_view_billing: false });
+            setFormData({ full_name: '', email: '', phone_number: '', address: '', rfc: '', notes: '', can_view_billing: false });
         }
     }, [client]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
@@ -76,57 +99,80 @@ function ClientForm({ client, onSave, onFinish }: { client: Partial<Client> | nu
 
     return (
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-            {/* ... campos del formulario ... */}
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="full_name" className="text-right">Nombre</Label>
-                <Input id="full_name" name="full_name" value={formData.full_name} onChange={handleInputChange} className="col-span-3" required />
+            <div className="grid gap-2">
+                <Label htmlFor="full_name">Nombre Completo</Label>
+                <Input id="full_name" name="full_name" value={formData.full_name} onChange={handleInputChange} required />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="email" className="text-right">Email</Label>
-                <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="phone_number" className="text-right">Teléfono</Label>
-                <Input id="phone_number" name="phone_number" value={formData.phone_number} onChange={handleInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="address" className="text-right">Dirección</Label>
-                <Input id="address" name="address" value={formData.address} onChange={handleInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="rfc" className="text-right">RFC</Label>
-                <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="can_view_billing" className="text-right">Ver Facturación</Label>
-                <div className="col-span-3 flex items-center space-x-2">
-                    <Switch
-                        id="can_view_billing"
-                        checked={formData.can_view_billing}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_view_billing: checked }))}
-                    />
-                    <Label htmlFor="can_view_billing" className="text-sm text-muted-foreground cursor-pointer">
-                        Permitir que el cliente vea su facturación en el portal
-                    </Label>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="phone_number">Teléfono</Label>
+                    <Input id="phone_number" name="phone_number" value={formData.phone_number} onChange={handleInputChange} />
                 </div>
             </div>
-            <DialogFooter>
+
+            <div className="grid gap-2">
+                <Label htmlFor="address">Dirección</Label>
+                <Input id="address" name="address" value={formData.address} onChange={handleInputChange} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor="rfc">RFC</Label>
+                <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleInputChange} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor="notes">Notas del Cliente</Label>
+                <Textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    placeholder="Información adicional relevante..."
+                    className="min-h-[100px]"
+                />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                    id="can_view_billing"
+                    checked={formData.can_view_billing}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, can_view_billing: checked }))}
+                />
+                <Label htmlFor="can_view_billing" className="text-sm font-normal cursor-pointer">
+                    Permitir acceso al portal de facturación
+                </Label>
+            </div>
+
+            <DialogFooter className="mt-4">
                 <Button type="button" variant="outline" onClick={onFinish}>Cancelar</Button>
-                <Button type="submit">Guardar Cambios</Button>
+                <Button type="submit">Guardar</Button>
             </DialogFooter>
         </form>
     );
 }
 
-// --- Componente Principal de la Página ---
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([]);
+    const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const { url } = useAuthStore();
+    const [searchTerm, setSearchTerm] = useState('');
 
+    // Estados para las pestañas
+    const [clientCases, setClientCases] = useState<Case[]>([]);
+    const [clientDocuments, setClientDocuments] = useState<Document[]>([]);
+    const [clientInvoices, setClientInvoices] = useState<Invoice[]>([]);
+    const [loadingCases, setLoadingCases] = useState(false);
+    const [loadingDocuments, setLoadingDocuments] = useState(false);
+    const [loadingInvoices, setLoadingInvoices] = useState(false);
+
+    const { url } = useAuthStore();
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -134,8 +180,11 @@ export default function ClientsPage() {
                 setLoading(true);
                 const data = await getClients(url);
                 setClients(data);
+                if (data.length > 0 && !selectedClient) {
+                    setSelectedClient(data[0]);
+                }
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
+                toast.error('Error al cargar clientes');
             } finally {
                 setLoading(false);
             }
@@ -143,137 +192,494 @@ export default function ClientsPage() {
         fetchClients();
     }, [url]);
 
+    // Cargar datos del cliente seleccionado
+    useEffect(() => {
+        if (!selectedClient) return;
+
+        const fetchClientData = async () => {
+            // Cargar casos
+            setLoadingCases(true);
+            try {
+                const cases = await getCases(url, selectedClient.id);
+                setClientCases(cases);
+
+                // Cargar documentos de todos los casos del cliente
+                setLoadingDocuments(true);
+                try {
+                    const allDocuments: Document[] = [];
+                    for (const caso of cases) {
+                        const { getDocumentsForCase } = await import('@/app/lib/api');
+                        const docs = await getDocumentsForCase(caso.id, url);
+                        allDocuments.push(...docs);
+                    }
+                    setClientDocuments(allDocuments);
+                } catch (err) {
+                    console.error('Error al cargar documentos:', err);
+                    setClientDocuments([]);
+                } finally {
+                    setLoadingDocuments(false);
+                }
+            } catch (err) {
+                console.error('Error al cargar casos:', err);
+                setClientCases([]);
+                setClientDocuments([]);
+            } finally {
+                setLoadingCases(false);
+            }
+
+            // Cargar facturas
+            setLoadingInvoices(true);
+            try {
+                const invoices = await getInvoices(url);
+                // Filtrar facturas del cliente seleccionado
+                const clientInvoices = invoices.filter((inv: Invoice) => inv.client_id === selectedClient.id);
+                setClientInvoices(clientInvoices);
+            } catch (err) {
+                console.error('Error al cargar facturas:', err);
+                setClientInvoices([]);
+            } finally {
+                setLoadingInvoices(false);
+            }
+        };
+
+        fetchClientData();
+    }, [selectedClient, url]);
+
     const handleSaveClient = async (clientData: Omit<Client, 'id'>) => {
         try {
             if (editingClient) {
-                // Modo Edición
                 const updated = await updateClient(editingClient.id, clientData, url);
                 setClients(prev => prev.map(c => c.id === editingClient.id ? updated : c));
-                toast.success('Cliente actualizado correctamente');
+                setSelectedClient(updated);
+                toast.success('Cliente actualizado');
             } else {
-                // Modo Creación
                 const created = await createClient(clientData, url);
                 setClients(prev => [...prev, created]);
-                toast.success('Cliente creado correctamente');
+                setSelectedClient(created);
+                toast.success('Cliente creado');
             }
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'No se pudo guardar el cliente');
+            toast.error('Error al guardar cliente');
         }
     };
 
     const handleDeleteClient = async (clientId: number) => {
         try {
             await deleteClient(clientId, url);
-            setClients(prev => prev.filter(c => c.id !== clientId));
-            toast.success("Cliente eliminado correctamente.");
-        } catch (err) {
-            if (err instanceof Error && err.message.includes('409')) {
-                toast.error('No se puede eliminar: El cliente tiene casos asociados.');
-            } else {
-                toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el cliente');
+            const newClients = clients.filter(c => c.id !== clientId);
+            setClients(newClients);
+            if (selectedClient?.id === clientId) {
+                setSelectedClient(newClients[0] || null);
             }
+            toast.success("Cliente eliminado");
+        } catch (err) {
+            toast.error('No se pudo eliminar el cliente');
         }
     };
 
-    const openCreateModal = () => {
-        setEditingClient(null);
-        setIsModalOpen(true);
-    };
-
-    const openEditModal = (client: Client) => {
-        setEditingClient(client);
-        setIsModalOpen(true);
-    };
+    const filteredClients = clients.filter(client =>
+        client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <ProtectedRoute allowedRoles={['owner', 'lawyer']}>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold">Clientes</h1>
-                <Button className='cursor-pointer' onClick={openCreateModal}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Cliente
-                </Button>
-            </div>
+            <div className="h-[calc(100vh-2rem)] flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
+                        <p className="text-muted-foreground">Gestiona y revisa toda la información de tus clientes.</p>
+                    </div>
+                </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Lista de Clientes</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nombre Completo</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Teléfono</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading && <TableRow><TableCell colSpan={4} className="text-center h-24">Cargando...</TableCell></TableRow>}
-                            {error && <TableRow><TableCell colSpan={4} className="text-center h-24 text-destructive">{error}</TableCell></TableRow>}
-                            {!loading && clients.map((client) => (
-                                <TableRow key={client.id}>
-                                    <TableCell className="font-medium">{client.full_name}</TableCell>
-                                    <TableCell>{client.email}</TableCell>
-                                    <TableCell>{client.phone_number}</TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Abrir menú</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
+                    {/* Lista de Clientes (Izquierda) */}
+                    <Card className="lg:col-span-4 flex flex-col h-full min-h-0 border-r-0 lg:border-r">
+                        <div className="p-4 border-b space-y-4">
+                            <div className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar clientes..."
+                                        className="pl-8"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <Button onClick={() => { setEditingClient(null); setIsModalOpen(true); }} className="shrink-0">
+                                    <Plus className="h-4 w-4 mr-2" /> Nuevo
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-h-full">
+                            <ScrollArea className="h-full">
+                                <div className="divide-y">
+                                    {filteredClients.map((client) => (
+                                        <div
+                                            key={client.id}
+                                            className={`p-4 cursor-pointer hover:bg-accent/50 transition-colors ${selectedClient?.id === client.id ? 'bg-accent' : ''}`}
+                                            onClick={() => setSelectedClient(client)}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Avatar>
+                                                    <AvatarFallback>{client.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium truncate">{client.full_name}</p>
+                                                    <p className="text-sm text-muted-foreground truncate">{client.email}</p>
+                                                </div>
+                                                {selectedClient?.id === client.id && (
+                                                    <div className="w-1 h-8 bg-primary rounded-full" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {filteredClients.length === 0 && (
+                                        <div className="p-8 text-center text-muted-foreground">
+                                            No se encontraron clientes
+                                        </div>
+                                    )}
+                                </div>
+                            </ScrollArea>
+                        </div>
+                    </Card>
+
+                    {/* Detalle del Cliente (Derecha) */}
+                    <Card className="lg:col-span-8 flex flex-col h-full min-h-0 border-l-0 lg:border-l">
+                        {selectedClient ? (
+                            <div className="flex flex-col h-full">
+                                {/* Header del Detalle */}
+                                <div className="p-6 border-b flex justify-between items-start">
+                                    <div className="flex gap-4">
+                                        <Avatar className="h-16 w-16">
+                                            <AvatarFallback className="text-xl">{selectedClient.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h2 className="text-2xl font-bold">{selectedClient.full_name}</h2>
+                                            <p className="text-muted-foreground">{selectedClient.email}</p>
+                                            <div className="flex gap-2 mt-2">
+                                                <Badge variant={selectedClient.can_view_billing ? "default" : "secondary"}>
+                                                    {selectedClient.can_view_billing ? "Portal Activo" : "Sin Portal"}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" onClick={() => { setEditingClient(selectedClient); setIsModalOpen(true); }}>
+                                            <Edit className="h-4 w-4 mr-2" /> Editar
+                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="icon">
+                                                    <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => openEditModal(client)}>
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    <span>Editar</span>
-                                                </DropdownMenuItem>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" className="w-full justify-start text-sm p-2 font-normal text-destructive hover:bg-destructive/10">
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            <span>Eliminar</span>
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                Esta acción no se puede deshacer. Esto eliminará permanentemente al cliente y todos sus datos asociados.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteClient(client.id)} className="bg-destructive hover:bg-destructive/90">
-                                                                Sí, eliminar cliente
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta acción eliminará permanentemente al cliente y todos sus datos.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteClient(selectedClient.id)}>Eliminar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                </div>
 
-            {/* Modal para Crear y Editar */}
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>{editingClient ? 'Editar Cliente' : 'Añadir Nuevo Cliente'}</DialogTitle>
-                        <DialogDescription>
-                            {editingClient ? 'Modifica los datos del cliente.' : 'Completa los datos para registrar un nuevo cliente.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <ClientForm client={editingClient} onSave={handleSaveClient} onFinish={() => setIsModalOpen(false)} />
-                </DialogContent>
-            </Dialog>
+                                {/* Tabs de Información */}
+                                <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
+                                    <div className="border-b px-6">
+                                        <TabsList className="h-12 gap-2">
+                                            <TabsTrigger value="info" className="gap-2">
+                                                <UserIcon className="h-4 w-4" />
+                                                Información
+                                            </TabsTrigger>
+                                            <TabsTrigger value="cases" className="gap-2">
+                                                <Briefcase className="h-4 w-4" />
+                                                Casos ({clientCases.length})
+                                            </TabsTrigger>
+                                            <TabsTrigger value="documents" className="gap-2">
+                                                <FileText className="h-4 w-4" />
+                                                Documentos ({clientDocuments.length})
+                                            </TabsTrigger>
+                                            <TabsTrigger value="billing" className="gap-2">
+                                                <DollarSign className="h-4 w-4" />
+                                                Facturación ({clientInvoices.length})
+                                            </TabsTrigger>
+                                        </TabsList>
+                                    </div>
+
+                                    <div className="flex-1 min-h-0">
+                                        <ScrollArea className="h-full">
+                                            <div className="p-6">
+                                                <TabsContent value="info" className="mt-0">
+                                                    <div className="grid gap-8">
+                                                        {/* Contact Details */}
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-4">Detalles de Contacto</h3>
+                                                            <div className="grid gap-4 text-sm">
+                                                                <div className="flex items-center gap-3">
+                                                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                                                    <span className="text-muted-foreground w-24">Email:</span>
+                                                                    <span>{selectedClient.email || 'No registrado'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                                    <span className="text-muted-foreground w-24">Teléfono:</span>
+                                                                    <span>{selectedClient.phone_number || 'No registrado'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                                    <span className="text-muted-foreground w-24">Dirección:</span>
+                                                                    <span>{selectedClient.address || 'No registrada'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                                                                    <span className="text-muted-foreground w-24">RFC:</span>
+                                                                    <span>{selectedClient.rfc || 'No registrado'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <Separator />
+
+                                                        {/* Client Notes */}
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-4">Notas del Cliente</h3>
+                                                            <Card className="bg-muted/50 border-none">
+                                                                <CardContent className="p-4">
+                                                                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                                                        {selectedClient.notes || 'No hay notas registradas para este cliente.'}
+                                                                    </p>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </div>
+
+                                                        <Separator />
+
+                                                        {/* Key Dates */}
+                                                        <div>
+                                                            <h3 className="text-lg font-semibold mb-4">Fechas Clave</h3>
+                                                            <div className="grid gap-4 text-sm">
+                                                                <div className="flex justify-between items-center">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                                                        <Calendar className="h-4 w-4" />
+                                                                        <span>Cliente desde</span>
+                                                                    </div>
+                                                                    <span className="font-medium">
+                                                                        {selectedClient.created_at
+                                                                            ? format(new Date(selectedClient.created_at), "d 'de' MMMM, yyyy", { locale: es })
+                                                                            : 'N/A'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex justify-between items-center">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                                                        <Clock className="h-4 w-4" />
+                                                                        <span>Última actualización</span>
+                                                                    </div>
+                                                                    <span className="font-medium">
+                                                                        {selectedClient.updated_at
+                                                                            ? format(new Date(selectedClient.updated_at), "d 'de' MMMM, yyyy", { locale: es })
+                                                                            : 'N/A'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </TabsContent>
+
+                                                <TabsContent value="cases" className="mt-0">
+                                                    {loadingCases ? (
+                                                        <div className="text-center py-12">
+                                                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                                                            <p className="text-sm text-muted-foreground">Cargando casos...</p>
+                                                        </div>
+                                                    ) : clientCases.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h3 className="text-lg font-semibold">Casos del Cliente</h3>
+                                                                <Badge variant="secondary">{clientCases.length} caso{clientCases.length !== 1 ? 's' : ''}</Badge>
+                                                            </div>
+                                                            <div className="grid gap-4">
+                                                                {clientCases.map((caso) => (
+                                                                    <Card key={caso.id} className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                                                        <CardHeader>
+                                                                            <div className="flex items-start justify-between">
+                                                                                <div className="flex-1">
+                                                                                    <CardTitle className="text-base">{caso.title}</CardTitle>
+                                                                                    {caso.case_number && (
+                                                                                        <CardDescription className="mt-1">
+                                                                                            Caso #{caso.case_number}
+                                                                                        </CardDescription>
+                                                                                    )}
+                                                                                </div>
+                                                                                <Badge variant={
+                                                                                    caso.status === 'Activo' ? 'default' :
+                                                                                        caso.status === 'Cerrado' ? 'secondary' :
+                                                                                            'outline'
+                                                                                }>
+                                                                                    {caso.status}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </CardHeader>
+                                                                        {caso.description && (
+                                                                            <CardContent>
+                                                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                                                    {caso.description}
+                                                                                </p>
+                                                                            </CardContent>
+                                                                        )}
+                                                                    </Card>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <Briefcase className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                                                            <h3 className="text-lg font-semibold mb-2">Sin Casos</h3>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Este cliente no tiene casos asociados todavía.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </TabsContent>
+
+                                                <TabsContent value="documents" className="mt-0">
+                                                    {loadingDocuments ? (
+                                                        <div className="text-center py-12">
+                                                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                                                            <p className="text-sm text-muted-foreground">Cargando documentos...</p>
+                                                        </div>
+                                                    ) : clientDocuments.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h3 className="text-lg font-semibold">Documentos del Cliente</h3>
+                                                                <Badge variant="secondary">{clientDocuments.length} documento{clientDocuments.length !== 1 ? 's' : ''}</Badge>
+                                                            </div>
+                                                            <div className="grid gap-3">
+                                                                {clientDocuments.map((doc) => (
+                                                                    <Card key={doc.id} className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                                                        <CardContent className="p-4">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <FileText className="h-8 w-8 text-muted-foreground" />
+                                                                                <div className="flex-1 min-w-0">
+                                                                                    <p className="font-medium truncate">{doc.file_name}</p>
+                                                                                    <p className="text-sm text-muted-foreground">
+                                                                                        Subido {format(new Date(doc.uploaded_at), "d 'de' MMMM, yyyy", { locale: es })}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </CardContent>
+                                                                    </Card>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                                                            <h3 className="text-lg font-semibold mb-2">Sin Documentos</h3>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                No hay documentos asociados a este cliente.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </TabsContent>
+
+                                                <TabsContent value="billing" className="mt-0">
+                                                    {loadingInvoices ? (
+                                                        <div className="text-center py-12">
+                                                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                                                            <p className="text-sm text-muted-foreground">Cargando facturas...</p>
+                                                        </div>
+                                                    ) : clientInvoices.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h3 className="text-lg font-semibold">Facturación del Cliente</h3>
+                                                                <Badge variant="secondary">{clientInvoices.length} factura{clientInvoices.length !== 1 ? 's' : ''}</Badge>
+                                                            </div>
+                                                            <div className="grid gap-4">
+                                                                {clientInvoices.map((invoice) => (
+                                                                    <Card key={invoice.id} className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                                                        <CardHeader>
+                                                                            <div className="flex items-start justify-between">
+                                                                                <div className="flex-1">
+                                                                                    <CardTitle className="text-base">Factura #{invoice.invoice_number}</CardTitle>
+                                                                                    <CardDescription className="mt-1">
+                                                                                        Emitida: {format(new Date(invoice.issue_date), "d 'de' MMMM, yyyy", { locale: es })}
+                                                                                    </CardDescription>
+                                                                                </div>
+                                                                                <Badge variant={
+                                                                                    invoice.status === 'Pagada' ? 'default' :
+                                                                                        invoice.status === 'Pendiente' ? 'secondary' :
+                                                                                            invoice.status === 'Vencida' ? 'destructive' :
+                                                                                                'outline'
+                                                                                }>
+                                                                                    {invoice.status}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </CardHeader>
+                                                                        <CardContent>
+                                                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                                                <div>
+                                                                                    <p className="text-muted-foreground">Monto Total</p>
+                                                                                    <p className="font-semibold text-lg">${invoice.amount.toFixed(2)}</p>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-muted-foreground">Saldo Pendiente</p>
+                                                                                    <p className="font-semibold text-lg">${invoice.balance_due.toFixed(2)}</p>
+                                                                                </div>
+                                                                                <div className="col-span-2">
+                                                                                    <p className="text-muted-foreground">Vencimiento</p>
+                                                                                    <p className="font-medium">
+                                                                                        {format(new Date(invoice.due_date), "d 'de' MMMM, yyyy", { locale: es })}
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </CardContent>
+                                                                    </Card>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center py-12">
+                                                            <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+                                                            <h3 className="text-lg font-semibold mb-2">Sin Facturas</h3>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                No hay facturas registradas para este cliente.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </TabsContent>
+                                            </div>
+                                        </ScrollArea>
+                                    </div>
+                                </Tabs>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8">
+                                <UserIcon className="h-16 w-16 mb-4 opacity-20" />
+                                <p>Selecciona un cliente para ver sus detalles</p>
+                            </div>
+                        )}
+                    </Card>
+                </div>
+
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-[600px]">
+                        <DialogHeader>
+                            <DialogTitle>{editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</DialogTitle>
+                            <DialogDescription>
+                                {editingClient ? 'Actualiza la información del cliente.' : 'Ingresa los datos del nuevo cliente.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <ClientForm client={editingClient} onSave={handleSaveClient} onFinish={() => setIsModalOpen(false)} />
+                    </DialogContent>
+                </Dialog>
+            </div>
         </ProtectedRoute>
     );
 }
