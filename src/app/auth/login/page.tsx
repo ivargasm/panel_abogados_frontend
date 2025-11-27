@@ -23,11 +23,11 @@ export default function LoginPage() {
         const validateAndRedirect = async () => {
             const state = useAuthStore.getState();
             if (state.userAuth && state.user) {
-                 // Si ya está autenticado, redirigir según el rol
+                // Si ya está autenticado, redirigir según el rol
                 if (state.user.role === 'client') {
                     router.push('/portal-cliente');
                 } else {
-                    router.push('/profile'); // Ruta general para abogados/owners
+                    router.push('/dashboard'); // Ruta general para abogados/owners
                 }
             }
         };
@@ -39,12 +39,12 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const userData =await loginUser(email, password, url);
+            const userData = await loginUser(email, password, url);
             if (userData?.role === 'client') {
                 router.push("/portal-cliente");
             } else {
                 // Para 'owner' y 'lawyer'
-                router.push("/dashboard/clients"); 
+                router.push("/dashboard");
             }
         } catch (err: unknown) {
             if (err instanceof Error) {
@@ -59,7 +59,7 @@ export default function LoginPage() {
         <div className="min-h-screen flex items-center justify-center p-4 bg-background">
 
             <form onSubmit={handleLogin}>
-            {error && <p className="text-destructive text-sm mb-2">{error}</p>}
+                {error && <p className="text-destructive text-sm mb-2">{error}</p>}
                 <Card className="w-full max-w-md shadow-lg">
                     <CardHeader className="space-y-1">
                         <CardTitle className="text-2xl font-bold text-center">Iniciar sesión</CardTitle>

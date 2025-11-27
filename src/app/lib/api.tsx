@@ -2,7 +2,7 @@
 // Este archivo centraliza todas las llamadas a la API de FastAPI.
 // Ahora importa los tipos desde un archivo centralizado para mayor orden y mantenibilidad.
 
-import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus, Invoice, InvoiceData, PaymentData } from "@/app/types"; // Importamos los tipos
+import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus, Invoice, InvoiceData, PaymentData, PresignedURLResponse } from "@/app/types"; // Importamos los tipos
 
 // --- API de Autenticación ---
 
@@ -68,6 +68,42 @@ export async function reset_password(url: string, new_password: string, token: s
 
     if (!res.ok) throw new Error('Error al resetear la contraseña');
     return res;
+}
+
+export async function updateUserProfile(profileData: { full_name?: string; phone_number?: string; job_title?: string; profile_picture_url?: string }, url: string) {
+    const res = await fetch(`${url}/auth/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(profileData),
+    });
+    if (!res.ok) throw new Error('Error al actualizar el perfil');
+    return res.json();
+}
+
+export async function changePassword(passwordData: { current_password: string; new_password: string }, url: string) {
+    const res = await fetch(`${url}/auth/change-password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(passwordData),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || 'Error al cambiar la contraseña');
+    }
+    return res.json();
+}
+
+export async function initiateProfilePictureUpload(fileName: string, fileType: string, fileSize: number, url: string): Promise<PresignedURLResponse> {
+    const res = await fetch(`${url}/auth/profile-picture/initiate-upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ file_name: fileName, file_type: fileType, file_size_bytes: fileSize }),
+    });
+    if (!res.ok) throw new Error('No se pudo iniciar la subida de la foto de perfil');
+    return res.json();
 }
 
 // --- API para Clientes (CRUD Completo) ---

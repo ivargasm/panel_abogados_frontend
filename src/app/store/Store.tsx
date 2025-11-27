@@ -3,11 +3,22 @@ import { login, fetchUser, logout, register } from "../lib/api";
 import { redirect } from 'next/navigation';
 
 interface AuthState {
-    user: { id: string; username: string; email: string; role: string; workspace_id: string; subscription_plan: "free" | "solo" | "firm"; subscription_status: "trialing" | "active" | "past_due" | "canceled"; } | null;
+    user: {
+        id: string;
+        full_name: string;
+        email: string;
+        phone_number?: string;
+        job_title?: string;
+        profile_picture_url?: string;
+        role: string;
+        workspace_id: string;
+        subscription_plan: "free" | "solo" | "firm";
+        subscription_status: "trialing" | "active" | "past_due" | "canceled";
+    } | null;
     setUser: (user: AuthState['user']) => void;
     logout: () => void;
     url: string;
-    loginUser: (email: string, password: string, url: string) => Promise<{ role: string; [key: string]: unknown } | void>;
+    loginUser: (email: string, password: string, url: string) => Promise<{ role: string;[key: string]: unknown } | void>;
     userAuth: boolean
     userValid: () => Promise<void>;
     registerUser: (username: string, email: string, password: string) => Promise<boolean>;
@@ -26,7 +37,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (!loginResponse.ok) { // Verificamos que la respuesta del login fue exitosa
             throw new Error('Credenciales incorrectas');
         }
-        
+
         // 2. Obtenemos los datos del usuario
         const userData = await fetchUser(useAuthStore.getState().url);
         if (!userData) {
@@ -48,13 +59,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ userAuth: true, user: data });
     },
     // 📌 Cerrar sesión
-    logout: async() => {
+    logout: async () => {
         try {
             const data = await logout(useAuthStore.getState().url);
             if (!data) {
                 return;
             }
-            set({ user: null, userAuth: false});
+            set({ user: null, userAuth: false });
             redirect("/login");
         } catch (error) {
             console.error("Error al cerrar sesión", error);
@@ -67,5 +78,5 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
         return success;
     },
-    
+
 }));

@@ -226,3 +226,9 @@ export type PaymentData = {
     method: string;
     notes: string;
 };
+
+export type PresignedURLResponse = {
+    upload_url: string;
+    file_path: string;
+    document_id: number;
+};
