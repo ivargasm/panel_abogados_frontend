@@ -79,6 +79,7 @@ export type ClientCaseDetail = {
     description: string | null;
     status: string;
     updates: CaseUpdate[];
+    assigned_lawyer?: UserBasicInfo | null;
 };
 
 // La estructura para la lista de casos en el dashboard del cliente
@@ -89,6 +90,7 @@ export type CaseSummary = {
     description: string | null;
     status: string;
     client: Client;
+    assigned_lawyer?: UserBasicInfo | null;
 };
 
 /**
