@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/Store";
-import Link from "next/link"
-import { Eye, EyeOff } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import Link from "next/link";
+import { Eye, EyeOff, Lock, Scale, Image as ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -16,18 +15,18 @@ export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         const validateAndRedirect = async () => {
             const state = useAuthStore.getState();
             if (state.userAuth && state.user) {
-                // Si ya está autenticado, redirigir según el rol
                 if (state.user.role === 'client') {
                     router.push('/portal-cliente');
                 } else {
-                    router.push('/dashboard'); // Ruta general para abogados/owners
+                    router.push('/dashboard');
                 }
             }
         };
@@ -37,57 +36,98 @@ export default function LoginPage() {
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
+        setLoading(true);
 
         try {
             const userData = await loginUser(email, password, url);
             if (userData?.role === 'client') {
                 router.push("/portal-cliente");
             } else {
-                // Para 'owner' y 'lawyer'
                 router.push("/dashboard");
             }
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
             } else {
-                setError("An unknown error occurred");
+                setError("Ocurrió un error desconocido");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <div className="min-h-screen w-full flex">
+            {/* Left Panel - Branding */}
+            <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
+                {/* Background Pattern/Gradient */}
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800 z-0" />
 
-            <form onSubmit={handleLogin}>
-                {error && <p className="text-destructive text-sm mb-2">{error}</p>}
-                <Card className="w-full max-w-md shadow-lg">
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center">Iniciar sesión</CardTitle>
-                        <CardDescription className="text-center">
-                            Ingresa tus credenciales para acceder
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                {/* Logo */}
+                <div className="relative z-10 flex items-center gap-2 text-2xl font-bold">
+                    <Scale className="h-8 w-8" />
+                    <span>LexControl</span>
+                </div>
+
+                {/* Central Visual Placeholder */}
+                <div className="relative z-10 flex-1 flex items-center justify-center">
+                    <div className="w-full max-w-md aspect-square rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
+                        <img
+                            src="/login-visual.png"
+                            alt="Legal Tech Visualization"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                </div>
+
+                {/* Bottom Text */}
+                <div className="relative z-10 space-y-4 max-w-lg">
+                    <h1 className="text-4xl font-bold leading-tight">
+                        Gestión Inteligente de Casos, Simplificada.
+                    </h1>
+                    <p className="text-slate-400 text-lg">
+                        Optimiza tu práctica, asegura tus datos y enfócate en lo que más importa: tus clientes.
+                    </p>
+                </div>
+            </div>
+
+            {/* Right Panel - Login Form */}
+            <div className="flex-1 flex items-center justify-center p-8 bg-background">
+                <div className="w-full max-w-md space-y-8">
+                    <div className="text-center space-y-2">
+                        <h2 className="text-3xl font-bold tracking-tight">Iniciar Sesión en LexControl</h2>
+                        <p className="text-muted-foreground">
+                            ¡Bienvenido de nuevo! Por favor ingresa tus datos.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleLogin} className="space-y-6">
+                        {error && (
+                            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+                                {error}
+                            </div>
+                        )}
+
                         <div className="space-y-2">
-                            <Label htmlFor="email">
-                                Correo electrónico
-                            </Label>
+                            <Label htmlFor="email">Correo Electrónico</Label>
                             <Input
                                 id="email"
                                 type="email"
-                                placeholder="correo@ejemplo.com"
+                                placeholder="tucorreo@ejemplo.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className=""
+                                className="h-11"
                             />
                         </div>
+
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password">
-                                    Contraseña
-                                </Label>
-                                <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
+                                <Label htmlFor="password">Contraseña</Label>
+                                <Link
+                                    href="/auth/forgot-password"
+                                    className="text-sm font-medium text-primary hover:underline"
+                                >
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
@@ -99,13 +139,13 @@ export default function LoginPage() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="pr-10"
+                                    className="h-11 pr-10"
                                 />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute right-0 top-0 h-full px-3"
+                                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
                                     onClick={() => setShowPassword(!showPassword)}
                                     aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                                 >
@@ -117,21 +157,30 @@ export default function LoginPage() {
                                 </Button>
                             </div>
                         </div>
-                        <Button type="submit" className="w-full">
-                            Iniciar sesión
-                        </Button>
-                    </CardContent>
-                    <CardFooter className="flex justify-center">
-                        <p className="text-sm text-muted-foreground">
-                            ¿No tienes una cuenta?{" "}
-                            <Link href="/auth/register" className="text-primary hover:underline">
-                                Regístrate
-                            </Link>
-                        </p>
-                    </CardFooter>
-                </Card>
 
-            </form>
+                        <Button
+                            type="submit"
+                            className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                "Iniciando sesión..."
+                            ) : (
+                                <>
+                                    <Lock className="mr-2 h-4 w-4" /> Iniciar Sesión
+                                </>
+                            )}
+                        </Button>
+                    </form>
+
+                    <div className="text-center text-sm">
+                        <span className="text-muted-foreground">¿No tienes una cuenta? </span>
+                        <Link href="/auth/register" className="font-medium text-primary hover:underline">
+                            Regístrate
+                        </Link>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

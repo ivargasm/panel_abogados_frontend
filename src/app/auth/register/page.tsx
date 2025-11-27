@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/Store";
-
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { EyeIcon, EyeOffIcon } from "lucide-react"
+import Link from "next/link";
+import { Eye, EyeOff, Lock, Scale, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -22,60 +21,36 @@ export default function RegisterPage() {
         confirmPassword: ""
     });
 
-    const [showPassword, setShowPassword] = useState(false)
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-    
-    const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword)
-    }
-
-    const toggleConfirmPasswordVisibility = () => {
-        setShowConfirmPassword(!showConfirmPassword)
-    }
-
-    // useEffect(() => {
-    //     const validateUser = async () => {
-    //         await userValid();
-    //     };
-    //     validateUser();
-    // }, [userValid]);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState<string[]>([]);
 
     useEffect(() => {
         if ((userAuth || user)) {
-            router.push('/profile');
+            router.push('/dashboard');
         }
     }, [user, userAuth, router]);
-
-    const [errors, setErrors] = useState<string[]>([]);
 
     const validateForm = () => {
         const newErrors = [];
 
         // Validar nombre de usuario
-        if (!/^[a-zA-Z0-9]+$/.test(form.username)) {
-            newErrors.push("El nombre de usuario solo puede contener letras y números.");
+        if (!/^[a-zA-Z0-9\s]+$/.test(form.username)) {
+            newErrors.push("El nombre solo puede contener letras y números.");
         }
         if (form.username.length < 3 || form.username.length > 50) {
-            newErrors.push("El nombre de usuario debe tener entre 3 y 50 caracteres.");
+            newErrors.push("El nombre debe tener entre 3 y 50 caracteres.");
         }
 
         // Validar email
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
             newErrors.push("El correo electrónico no es válido.");
         }
-        if (form.email.length > 50) {
-            newErrors.push("El correo electrónico es demasiado largo.");
-        }
 
         // Validar contraseña
         if (form.password.length < 8) {
             newErrors.push("La contraseña debe tener al menos 8 caracteres.");
-        }
-        if (!/[A-Z]/.test(form.password) || !/[a-z]/.test(form.password) || !/[0-9]/.test(form.password) || !/[^A-Za-z0-9]/.test(form.password)) {
-            newErrors.push("La contraseña debe incluir una mayúscula, una minúscula, un número y un carácter especial.");
-        }
-        if (form.password.length > 100) {
-            newErrors.push("La contraseña es demasiado larga.");
         }
 
         // Validar confirmación de contraseña
@@ -90,113 +65,155 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
+        setLoading(true);
 
         const success = await registerUser(form.username, form.email, form.password);
         if (success) {
             router.push("/auth/login");
         } else {
-            setErrors(["Error al registrar. Inténtalo nuevamente."]);
+            setErrors(["Error al registrar. Inténtalo nuevamente o usa otro correo."]);
         }
+        setLoading(false);
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-            <form onSubmit={handleSubmit}>
-                <Card className="w-full max-w-md shadow-lg bg-white dark:bg-gray-800">
-                    {errors.length > 0 && (
-                        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                            {errors.map((error, index) => (
-                                <p key={index}>• {error}</p>
-                            ))}
+        <div className="min-h-screen w-full flex">
+            {/* Left Panel - Form */}
+            <div className="flex-1 flex items-center justify-center p-8 bg-background overflow-y-auto">
+                <div className="w-full max-w-md space-y-8">
+                    {/* Header */}
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xl font-bold text-primary mb-6">
+                            <Scale className="h-6 w-6" />
+                            <span>LexControl</span>
                         </div>
-                    )}
-                    <CardHeader className="space-y-1">
-                        <CardTitle className="text-2xl font-bold text-center text-gray-900 dark:text-white">Crear cuenta</CardTitle>
-                        <CardDescription className="text-center text-gray-500 dark:text-gray-400">Ingresa tus datos para registrarte</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                        <h2 className="text-3xl font-bold tracking-tight">Crea tu Cuenta</h2>
+                        <p className="text-muted-foreground">
+                            Optimiza tu práctica. Gestiona tus casos de forma segura con LexControl.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {errors.length > 0 && (
+                            <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md space-y-1">
+                                {errors.map((err, i) => (
+                                    <p key={i}>• {err}</p>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="space-y-2">
-                            <Label className="text-gray-700 dark:text-gray-300" htmlFor="username">Usuario</Label>
-                            <Input className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600" id="username" 
-                                placeholder="Ingresa tu nombre de usuario" 
+                            <Label htmlFor="username">Nombre Completo</Label>
+                            <Input
+                                id="username"
+                                placeholder="Ingresa tu nombre completo"
                                 value={form.username}
-                                onChange={(e) => setForm({ ...form, username: e.target.value.trim() })}
+                                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                                required
+                                className="h-11"
                             />
                         </div>
+
                         <div className="space-y-2">
-                            <Label className="text-gray-700 dark:text-gray-300" htmlFor="email">Correo electrónico</Label>
-                            <Input className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600" id="email" type="email" 
-                                placeholder="tu@ejemplo.com"
+                            <Label htmlFor="email">Correo Electrónico</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="Ingresa tu correo electrónico"
                                 value={form.email}
-                                onChange={(e) => setForm({ ...form, email: e.target.value.trim() })}
+                                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                required
+                                className="h-11"
                             />
                         </div>
+
                         <div className="space-y-2">
-                            <Label className="text-gray-700 dark:text-gray-300" htmlFor="password">Contraseña</Label>
+                            <Label htmlFor="password">Contraseña</Label>
                             <div className="relative">
-                                <Input className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600" id="password" 
-                                    type={showPassword ? "text" : "password"} 
-                                    placeholder="Ingresa tu contraseña" 
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Crea una contraseña"
                                     value={form.password}
                                     onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                    required
+                                    className="h-11 pr-10"
                                 />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                    onClick={togglePasswordVisibility}
+                                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                                    onClick={() => setShowPassword(!showPassword)}
                                 >
-                                    {showPassword ? (
-                                        <EyeOffIcon className="h-4 w-4 text-gray-500" />
-                                    ) : (
-                                        <EyeIcon className="h-4 w-4 text-gray-500" />
-                                    )}
-                                    <span className="sr-only">{showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}</span>
+                                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                                 </Button>
                             </div>
                         </div>
+
                         <div className="space-y-2">
-                            <Label className="text-gray-700 dark:text-gray-300" htmlFor="confirmPassword">Repetir contraseña</Label>
+                            <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
                             <div className="relative">
-                                <Input className="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                                <Input
                                     id="confirmPassword"
                                     type={showConfirmPassword ? "text" : "password"}
                                     placeholder="Confirma tu contraseña"
                                     value={form.confirmPassword}
                                     onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                                    required
+                                    className="h-11 pr-10"
                                 />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                    onClick={toggleConfirmPasswordVisibility}
+                                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                 >
-                                    {showConfirmPassword ? (
-                                        <EyeOffIcon className="h-4 w-4 text-gray-500" />
-                                    ) : (
-                                        <EyeIcon className="h-4 w-4 text-gray-500" />
-                                    )}
-                                    <span className="sr-only">{showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}</span>
+                                    {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                                 </Button>
                             </div>
                         </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col space-y-4">
-                        <Button className="w-full bg-gray-500 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-primary/90 text-white">
-                            Registrarse
-                        </Button>
-                        <div className="text-center text-sm">
-                            ¿Ya tienes una cuenta?{" "}
-                            <Link href="/auth/login" className="text-slate-800 dark:text-slate-300 hover:underline font-medium">
-                                Iniciar sesión
-                            </Link>
-                        </div>
-                    </CardFooter>
-                </Card>
 
-            </form>
+                        <div className="flex items-start space-x-2">
+                            <Checkbox id="terms" required className="mt-1" />
+                            <label
+                                htmlFor="terms"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
+                            >
+                                Al crear una cuenta, aceptas nuestros <Link href="#" className="text-primary hover:underline">Términos de Servicio</Link> y <Link href="#" className="text-primary hover:underline">Política de Privacidad</Link>.
+                            </label>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white"
+                            disabled={loading}
+                        >
+                            {loading ? "Creando cuenta..." : "Crear Cuenta"}
+                        </Button>
+                    </form>
+
+                    <div className="text-center text-sm">
+                        <span className="text-muted-foreground">¿Ya tienes una cuenta? </span>
+                        <Link href="/auth/login" className="font-medium text-primary hover:underline">
+                            Iniciar sesión
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Panel - Image */}
+            <div className="hidden lg:block w-1/2 bg-slate-900 relative">
+                <div className="absolute inset-0">
+                    <img
+                        src="/register-visual.png"
+                        alt="Legal Library"
+                        className="w-full h-full object-cover opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
+                </div>
+            </div>
         </div>
     );
 }

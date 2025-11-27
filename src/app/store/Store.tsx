@@ -51,24 +51,28 @@ export const useAuthStore = create<AuthState>((set) => ({
         return userData; // <-- ¡CAMBIO CLAVE!
     },
     userValid: async () => {
-        const data = await fetchUser(useAuthStore.getState().url);
-        if (!data) {
-            set({ userAuth: false, user: null });  // Asegurar que se limpie el estado
-            return;
+        try {
+            const data = await fetchUser(useAuthStore.getState().url);
+            if (!data) {
+                set({ userAuth: false, user: null });
+                return;
+            }
+            set({ userAuth: true, user: data });
+        } catch (error) {
+            // Si falla fetchUser (ej. 401), asumimos que no hay sesión válida
+            set({ userAuth: false, user: null });
         }
-        set({ userAuth: true, user: data });
     },
     // 📌 Cerrar sesión
     logout: async () => {
         try {
-            const data = await logout(useAuthStore.getState().url);
-            if (!data) {
-                return;
-            }
-            set({ user: null, userAuth: false });
-            redirect("/login");
+            await logout(useAuthStore.getState().url);
         } catch (error) {
             console.error("Error al cerrar sesión", error);
+        } finally {
+            // Limpiamos el estado y redirigimos siempre, incluso si falla la petición al backend
+            set({ user: null, userAuth: false });
+            window.location.href = "/auth/login";
         }
     },
     registerUser: async (username, email, password) => {
