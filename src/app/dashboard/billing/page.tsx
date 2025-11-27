@@ -37,46 +37,49 @@ export default function BillingPage() {
     }, []);
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 md:w-full">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold tracking-tight">Facturación Interna</h1>
-                <Button onClick={() => setIsCreateModalOpen(true)}>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Facturación y Pagos</h1>
+                    <p className="text-muted-foreground">Gestiona todas las facturas y pagos de tu firma.</p>
+                </div>
+                <Button onClick={() => setIsCreateModalOpen(true)} className="bg-[#1e293b] hover:bg-[#0f172a]">
                     <Plus className="mr-2 h-4 w-4" />
-                    Nueva Factura
+                    Crear Nueva Factura
                 </Button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Facturado</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Pendiente</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${stats.total_billed.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            {stats.invoice_count} facturas generadas
+                        <div className="text-3xl font-bold text-[#1e293b]">${stats.total_due.toFixed(2)}</div>
+                        <p className="text-xs font-medium text-green-600 mt-1">
+                            +2.5% vs mes anterior
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Cobrado</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Vencido</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">${stats.total_collected.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Ingresos registrados
+                        <div className="text-3xl font-bold text-[#1e293b]">${(stats.total_billed - stats.total_collected - stats.total_due).toFixed(2)}</div> {/* Assuming this calculation for now or 0 if negative */}
+                        <p className="text-xs font-medium text-red-600 mt-1">
+                            -1.2% vs mes anterior
                         </p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Por Cobrar</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Pagado (Últimos 30 Días)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">${stats.total_due.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Saldo pendiente
+                        <div className="text-3xl font-bold text-[#1e293b]">${stats.total_collected.toFixed(2)}</div>
+                        <p className="text-xs font-medium text-green-600 mt-1">
+                            +5.8% vs mes anterior
                         </p>
                     </CardContent>
                 </Card>

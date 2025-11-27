@@ -1,40 +1,51 @@
 // app/dashboard/calendar/page.tsx
-// Versión final con edición, borrado y cambio de estado de eventos.
-
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { PlusCircle, Trash2, CalendarPlus } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock, MapPin, AlignLeft, Trash2, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
+import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-// Importaciones de FullCalendar y date-fns
+// FullCalendar Imports
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { EventSourceInput, EventClickArg } from '@fullcalendar/core/index.js';
-import { format, parseISO } from 'date-fns';
+import { EventSourceInput, EventClickArg, DateSelectArg } from '@fullcalendar/core/index.js';
 
-// Importaciones de componentes de shadcn/ui
+// Shadcn UI Imports
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar"; // Assuming this exists, otherwise we'll use a simple date picker or custom implementation
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
-// Importaciones de tu lógica de negocio
+// Business Logic Imports
 import { useAuthStore } from '@/app/store/Store';
-import { getCases, createCalendarEvent, getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, downloadCalendarEventIcs } from '@/app/lib/api';
+import { getCases, createCalendarEvent, getCalendarEvents, updateCalendarEvent, deleteCalendarEvent } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import { Case, CalendarEventData, CalendarEvent as CalendarEventType } from '@/app/types';
 
-const EVENT_TYPES = ["Audiencia", "Vencimiento", "Reunión", "Notificación", "Otro"];
+const EVENT_TYPES = [
+    { id: "Audiencia", label: "Audiencia", color: "bg-red-500" },
+    { id: "Vencimiento", label: "Vencimiento", color: "bg-amber-500" },
+    { id: "Reunión", label: "Reunión", color: "bg-blue-500" },
+    { id: "Notificación", label: "Notificación", color: "bg-purple-500" },
+    { id: "Otro", label: "Otro", color: "bg-gray-500" }
+];
+
 const EVENT_STATUSES = ["Pendiente", "Completado", "Cancelado"];
 
-// --- Componente del Formulario (Ahora maneja Crear y Editar) ---
+// --- Event Form Component ---
 function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: CalendarEventType | null, cases: Case[], onSave: (data: CalendarEventData) => Promise<void>, onFinish: () => void, onDelete: () => Promise<void> }) {
     const [formData, setFormData] = useState({
         title: '',
@@ -46,8 +57,6 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
         start_time: '09:00',
         status: 'Pendiente',
     });
-    const [isDownloading, setIsDownloading] = useState(false);
-    const { url } = useAuthStore();
 
     useEffect(() => {
         if (event) {
@@ -62,21 +71,10 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
                 start_time: format(startDate, 'HH:mm'),
                 status: event.status,
             });
-        } else {
-            // Resetea para el modo creación
-            setFormData({
-                title: '', event_type: 'Otro', case_id: '0', location: '',
-                description: '', start_date: format(new Date(), 'yyyy-MM-dd'), start_time: '09:00', status: 'Pendiente'
-            });
         }
     }, [event]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const startDateTimeString = `${formData.start_date}T${formData.start_time}:00`;
         const payload: CalendarEventData = {
@@ -87,190 +85,241 @@ function EventForm({ event, cases, onSave, onFinish, onDelete }: { event: Calend
             event_type: formData.event_type,
             case_id: Number(formData.case_id) > 0 ? Number(formData.case_id) : null,
             location: formData.location || null,
-            status: formData.status as string,
+            status: formData.status,
         };
         await onSave(payload);
         onFinish();
     };
 
-    const handleDownload = async () => {
-        if (!event) return;
-        setIsDownloading(true);
-        try {
-            await downloadCalendarEventIcs(event.id, url);
-        } catch {
-            toast.error("No se pudo generar el archivo .ics");
-        } finally {
-            setIsDownloading(false);
-        }
-    };
-
     return (
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="title" className="text-right">Título</Label>
-                <Input id="title" name="title" value={formData.title} onChange={handleInputChange} className="col-span-3" required />
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="grid gap-2">
+                <Label htmlFor="title">Título del Evento</Label>
+                <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Ej. Audiencia Preliminar"
+                    required
+                />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="start_time" className="text-right">Fecha y Hora</Label>
-                <div className="col-span-3 grid grid-cols-2 gap-2">
-                    <Input id="start_date" name="start_date" type="date" value={formData.start_date} onChange={handleInputChange} />
-                    <Input id="start_time" name="start_time" type="time" value={formData.start_time} onChange={handleInputChange} />
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label>Fecha</Label>
+                    <Input
+                        type="date"
+                        value={formData.start_date}
+                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                        required
+                    />
+                </div>
+                <div className="grid gap-2">
+                    <Label>Hora</Label>
+                    <Input
+                        type="time"
+                        value={formData.start_time}
+                        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                        required
+                    />
                 </div>
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="location" className="text-right">Juzgado/Lugar</Label>
-                <Input id="location" name="location" value={formData.location} onChange={handleInputChange} className="col-span-3" placeholder="Ej. Juzgado 3ro Civil, Sala 2" />
+
+            <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                    <Label>Tipo de Evento</Label>
+                    <Select value={formData.event_type} onValueChange={(val) => setFormData({ ...formData, event_type: val })}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {EVENT_TYPES.map(type => (
+                                <SelectItem key={type.id} value={type.id}>
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-2 h-2 rounded-full ${type.color}`} />
+                                        {type.label}
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid gap-2">
+                    <Label>Estado</Label>
+                    <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {EVENT_STATUSES.map(status => (
+                                <SelectItem key={status} value={status}>{status}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="event_type" className="text-right">Tipo</Label>
-                <Select value={formData.event_type} onValueChange={(value) => setFormData(prev => ({...prev, event_type: value}))}>
-                    <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        {EVENT_TYPES.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">Estado</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({...prev, status: value}))}>
-                    <SelectTrigger className="col-span-3"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        {EVENT_STATUSES.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="case_id" className="text-right">Caso Asociado</Label>
-                <Select value={formData.case_id} onValueChange={(value) => setFormData(prev => ({...prev, case_id: value}))}>
-                    <SelectTrigger className="col-span-3"><SelectValue placeholder="(Opcional)" /></SelectTrigger>
+
+            <div className="grid gap-2">
+                <Label>Caso Relacionado (Opcional)</Label>
+                <Select value={formData.case_id} onValueChange={(val) => setFormData({ ...formData, case_id: val })}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar caso..." />
+                    </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="0">Ninguno</SelectItem>
                         {cases.map(c => (
-                            <SelectItem key={c.id} value={String(c.id)}>
-                                {c.title} - <span className="text-muted-foreground ml-1">{c.client.full_name}</span>
-                            </SelectItem>
+                            <SelectItem key={c.id} value={String(c.id)}>{c.title}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
             </div>
-             <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="description" className="text-right pt-2">Descripción</Label>
-                <Textarea id="description" name="description" value={formData.description} onChange={handleInputChange} className="col-span-3" placeholder="Añade notas o detalles adicionales..." />
-            </div>
-            <DialogFooter className="flex justify-between w-full">
-                <div>
-                    {event && ( // Solo mostrar el botón de eliminar si estamos editando
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button type="button" variant="destructive" className='mb-2'>
-                                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader><AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle><AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription></AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={onDelete}>Sí, eliminar</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    )}
-                    {event && (
-                        <Button type="button" variant="outline" onClick={handleDownload} disabled={isDownloading}>
-                            <CalendarPlus className="mr-2 h-4 w-4" />
-                            {isDownloading ? 'Generando...' : 'Añadir a Calendario'}
-                        </Button>
-                    )}
+
+            <div className="grid gap-2">
+                <Label>Ubicación</Label>
+                <div className="relative">
+                    <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        className="pl-8"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        placeholder="Ej. Juzgado 4to Civil"
+                    />
                 </div>
+            </div>
+
+            <div className="grid gap-2">
+                <Label>Descripción</Label>
+                <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Detalles adicionales..."
+                />
+            </div>
+
+            <DialogFooter className="flex justify-between sm:justify-between">
+                {event ? (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar evento?</AlertDialogTitle>
+                                <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={onDelete}>Eliminar</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                ) : <div />}
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={onFinish}>Cancelar</Button>
-                    <Button type="submit">Guardar Cambios</Button>
+                    <Button type="submit">Guardar</Button>
                 </div>
             </DialogFooter>
         </form>
     );
 }
 
-// --- Componente Principal de la Página de Calendario ---
+// --- Main Calendar Page Component ---
 export default function CalendarPage() {
+    const [date, setDate] = useState<Date | undefined>(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEventType | null>(null);
     const [cases, setCases] = useState<Case[]>([]);
-    const [filterCaseId, setFilterCaseId] = useState<number | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedTypes, setSelectedTypes] = useState<string[]>(EVENT_TYPES.map(t => t.id));
     const calendarRef = useRef<FullCalendar>(null);
     const { url } = useAuthStore();
 
+    // Fetch initial data
     useEffect(() => {
         const fetchCases = async () => {
             try {
-                const casesData = await getCases(url, null);
-                setCases(casesData);
-            } catch {
-                toast.error("No se pudieron cargar los casos para el formulario.");
+                const data = await getCases(url, null);
+                setCases(data);
+            } catch (error) {
+                console.error("Failed to fetch cases", error);
             }
         };
         fetchCases();
     }, [url]);
-    
-    const handleFilterChange = (caseIdValue: string) => {
-        const newCaseId = Number(caseIdValue) > 0 ? Number(caseIdValue) : null;
-        setFilterCaseId(newCaseId);
-        // Forzamos a FullCalendar a que vuelva a pedir los eventos con el nuevo filtro
-        calendarRef.current?.getApi().refetchEvents();
-    };
 
-    const handleDateClick = () => {
-        setSelectedEvent(null); // Aseguramos que estamos en modo creación
+    // Handlers
+    const handleDateSelect = (selectInfo: DateSelectArg) => {
+        setSelectedEvent(null);
         setIsModalOpen(true);
     };
 
     const handleEventClick = (clickInfo: EventClickArg) => {
-        const eventId = clickInfo.event.id;
-        const fullEvent = calendarRef.current?.getApi().getEventById(eventId)?.extendedProps.fullEventObject;
-        setSelectedEvent(fullEvent || null);
+        const event = clickInfo.event.extendedProps.fullEventObject;
+        setSelectedEvent(event);
         setIsModalOpen(true);
     };
-    
-    const handleSaveEvent = async (eventData: CalendarEventData) => {
+
+    const handleSaveEvent = async (data: CalendarEventData) => {
         try {
             if (selectedEvent) {
-                await updateCalendarEvent(selectedEvent.id, eventData, url);
-                toast.success("Evento actualizado con éxito.");
+                await updateCalendarEvent(selectedEvent.id, data, url);
+                toast.success("Evento actualizado");
             } else {
-                await createCalendarEvent(eventData, url);
-                toast.success("Evento creado con éxito.");
+                await createCalendarEvent(data, url);
+                toast.success("Evento creado");
             }
             calendarRef.current?.getApi().refetchEvents();
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'No se pudo guardar el evento');
+        } catch (error) {
+            toast.error("Error al guardar evento");
         }
     };
-    
+
     const handleDeleteEvent = async () => {
         if (!selectedEvent) return;
         try {
             await deleteCalendarEvent(selectedEvent.id, url);
-            toast.success("Evento eliminado con éxito.");
+            toast.success("Evento eliminado");
             calendarRef.current?.getApi().refetchEvents();
             setIsModalOpen(false);
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el evento');
+        } catch (error) {
+            toast.error("Error al eliminar evento");
+        }
+    };
+
+    const handleMiniCalendarSelect = (newDate: Date | undefined) => {
+        if (newDate && calendarRef.current) {
+            setDate(newDate);
+            calendarRef.current.getApi().gotoDate(newDate);
         }
     };
 
     const fetchEvents: EventSourceInput = async (fetchInfo, successCallback, failureCallback) => {
         try {
-            // Pasamos el `filterCaseId` del estado a la función de la API
-            const events: CalendarEventType[] = await getCalendarEvents(fetchInfo.start.toISOString(), fetchInfo.end.toISOString(), url, filterCaseId);
-            const formattedEvents = events.map(event => ({
+            const events = await getCalendarEvents(fetchInfo.start.toISOString(), fetchInfo.end.toISOString(), url, null);
+
+            // Client-side filtering
+            const filteredEvents = events.filter((event: { title: string; event_type: string; }) => {
+                const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesType = selectedTypes.includes(event.event_type);
+                return matchesSearch && matchesType;
+            });
+
+            const formattedEvents = filteredEvents.map((event: { id: any; title: any; start_time: any; end_time: any; is_all_day: any; event_type: string; }) => ({
                 id: String(event.id),
                 title: event.title,
                 start: event.start_time,
-                end: event.end_time || undefined,
+                end: event.end_time,
                 allDay: event.is_all_day,
-                className: event.status === 'Completado' ? 'opacity-50 bg-green-900 border-green-700' : event.status === 'Cancelado' ? 'opacity-50 bg-gray-700 border-gray-600 line-through' : '',
-                color: event.event_type === 'Audiencia' ? '#dc2626' : event.event_type === 'Vencimiento' ? '#f59e0b' : '#0ea5e9',
+                backgroundColor: EVENT_TYPES.find(t => t.id === event.event_type)?.color.replace('bg-', 'var(--') || '#3b82f6', // Fallback color logic needs refinement for proper CSS var usage or direct hex
+                classNames: [
+                    event.event_type === 'Audiencia' ? 'bg-red-500 border-red-600' :
+                        event.event_type === 'Vencimiento' ? 'bg-amber-500 border-amber-600' :
+                            event.event_type === 'Reunión' ? 'bg-blue-500 border-blue-600' :
+                                event.event_type === 'Notificación' ? 'bg-purple-500 border-purple-600' :
+                                    'bg-gray-500 border-gray-600'
+                ],
                 extendedProps: { fullEventObject: event }
             }));
             successCallback(formattedEvents);
@@ -279,64 +328,138 @@ export default function CalendarPage() {
         }
     };
 
+    // Trigger refetch when filters change
+    useEffect(() => {
+        calendarRef.current?.getApi().refetchEvents();
+    }, [searchTerm, selectedTypes]);
+
     return (
         <ProtectedRoute>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold">Calendario</h1>
-                <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <Select onValueChange={handleFilterChange}>
-                        <SelectTrigger className="w-full sm:w-[250px]">
-                            <SelectValue placeholder="Filtrar por caso..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="0">Todos los casos</SelectItem>
-                            {cases.map(c => (
-                                <SelectItem key={c.id} value={String(c.id)}>
-                                    {c.title} - <span className="text-muted-foreground ml-1">{c.client.full_name}</span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Evento
-                    </Button>
+            <div className="h-[calc(100vh-2rem)] flex flex-col gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
+
+                    {/* Sidebar */}
+                    <Card className="lg:col-span-3 flex flex-col h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
+                        <div className="p-4 space-y-6">
+                            <Button
+                                className="w-full justify-start text-lg h-12"
+                                size="lg"
+                                onClick={() => { setSelectedEvent(null); setIsModalOpen(true); }}
+                            >
+                                <Plus className="mr-2 h-5 w-5" /> Añadir Evento
+                            </Button>
+
+                            <div className="rounded-md border bg-card">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={handleMiniCalendarSelect}
+                                    locale={es}
+                                    className="rounded-md border shadow-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Filtros</h3>
+
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar eventos..."
+                                        className="pl-8"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="all"
+                                            checked={selectedTypes.length === EVENT_TYPES.length}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) setSelectedTypes(EVENT_TYPES.map(t => t.id));
+                                                else setSelectedTypes([]);
+                                            }}
+                                        />
+                                        <label htmlFor="all" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                            Todos los eventos
+                                        </label>
+                                    </div>
+                                    <Separator className="my-2" />
+                                    {EVENT_TYPES.map(type => (
+                                        <div key={type.id} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={type.id}
+                                                checked={selectedTypes.includes(type.id)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) setSelectedTypes([...selectedTypes, type.id]);
+                                                    else setSelectedTypes(selectedTypes.filter(t => t !== type.id));
+                                                }}
+                                            />
+                                            <div className={`w-3 h-3 rounded-full ${type.color}`} />
+                                            <label htmlFor={type.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {type.label}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Main Calendar Area */}
+                    <Card className="lg:col-span-9 flex flex-col h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
+                        <CardContent className="p-0 h-full flex flex-col">
+                            <div className="flex-1 p-4 h-full">
+                                <FullCalendar
+                                    ref={calendarRef}
+                                    plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                                    initialView="dayGridMonth"
+                                    headerToolbar={{
+                                        left: 'prev,next today',
+                                        center: 'title',
+                                        right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                                    }}
+                                    locale="es"
+                                    buttonText={{
+                                        today: 'Hoy',
+                                        month: 'Mes',
+                                        week: 'Semana',
+                                        day: 'Día',
+                                        list: 'Agenda'
+                                    }}
+                                    height="100%"
+                                    selectable={true}
+                                    selectMirror={true}
+                                    dayMaxEvents={true}
+                                    weekends={true}
+                                    events={fetchEvents}
+                                    select={handleDateSelect}
+                                    eventClick={handleEventClick}
+                                    eventClassNames="cursor-pointer hover:opacity-90 transition-opacity"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
+
+                {/* Event Modal */}
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-[500px]">
+                        <DialogHeader>
+                            <DialogTitle>{selectedEvent ? 'Editar Evento' : 'Nuevo Evento'}</DialogTitle>
+                        </DialogHeader>
+                        <EventForm
+                            event={selectedEvent}
+                            cases={cases}
+                            onSave={handleSaveEvent}
+                            onDelete={handleDeleteEvent}
+                            onFinish={() => setIsModalOpen(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
             </div>
-            <Card>
-                <CardContent className="p-4">
-                    <FullCalendar
-                        ref={calendarRef}
-                        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                        initialView="dayGridMonth"
-                        headerToolbar={{
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                        }}
-                        events={fetchEvents}
-                        locale="es"
-                        buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' }}
-                        selectable={true}
-                        dateClick={handleDateClick}
-                        eventClick={handleEventClick}
-                        height="auto"
-                    />
-                </CardContent>
-            </Card>
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[525px]">
-                    <DialogHeader>
-                        <DialogTitle>{selectedEvent ? 'Editar Evento' : 'Añadir Nuevo Evento'}</DialogTitle>
-                    </DialogHeader>
-                    <EventForm
-                        event={selectedEvent}
-                        cases={cases}
-                        onSave={handleSaveEvent}
-                        onDelete={handleDeleteEvent}
-                        onFinish={() => setIsModalOpen(false)}
-                    />
-                </DialogContent>
-            </Dialog>
         </ProtectedRoute>
     );
 }
