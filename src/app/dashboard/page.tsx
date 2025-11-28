@@ -2,16 +2,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/app/store/Store';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users, Briefcase, Calendar, FileText, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Users, Briefcase, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 import StatsCard from '@/app/components/dashboard/StatsCard';
 import RecentActivity from '@/app/components/dashboard/RecentActivity';
 import UpcomingDeadlines from '@/app/components/dashboard/UpcomingDeadlines';
 import { getDashboardStats, getRecentActivity, getUpcomingDeadlines } from '@/app/lib/api';
+import { DashboardCard } from '@/app/components/dashboard/DashboardCard';
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
@@ -147,29 +146,5 @@ export default function DashboardPage() {
                 </div>
             </div>
         </ProtectedRoute>
-    );
-}
-
-// Componente de tarjeta reutilizable para el dashboard
-export function DashboardCard({ title, description, href, icon }: { title: string, description: string, href: string, icon: React.ReactNode }) {
-    return (
-        <Link href={href}>
-            <Card className="hover:border-primary hover:shadow-lg transition-all duration-200 group">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-muted p-3 rounded-lg">
-                                {icon}
-                            </div>
-                            <div>
-                                <CardTitle>{title}</CardTitle>
-                                <CardDescription>{description}</CardDescription>
-                            </div>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                    </div>
-                </CardHeader>
-            </Card>
-        </Link>
     );
 }
