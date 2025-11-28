@@ -26,8 +26,8 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     userAuth: false,
-    url: 'http://localhost:8000',
-    // url: 'https://panel-abogados-backend.onrender.com',
+    // url: 'http://localhost:8000',
+    url: 'https://lexcontrol-648260980931.us-central1.run.app',
     // url: "https://gfncp124-8000.use.devtunnels.ms",
     setUser: (user) => set({ user }),
     loginUser: async (email, password) => {
