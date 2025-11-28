@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useAuthStore } from '@/app/store/Store';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +43,7 @@ const planFeatures = {
     ]
 };
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
     const { user, url } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const searchParams = useSearchParams();
@@ -128,93 +128,101 @@ export default function SubscriptionPage() {
     };
 
     return (
-        <ProtectedRoute allowedRoles={['owner']}>
-            <div className="container mx-auto p-4 md:p-8 space-y-8">
-                <div>
-                    <h1 className="text-3xl font-bold">Suscripción</h1>
-                    <p className="text-muted-foreground">Gestiona tu plan y accede a todas las funcionalidades de LexControl.</p>
-                </div>
-
-                {/* Usage Summary */}
-                {usageStats && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Uso del Plan Actual</CardTitle>
-                            <CardDescription>
-                                Estás en el plan <span className="font-bold uppercase">{usageStats.plan}</span>.
-                                Estado: <Badge variant={usageStats.status === 'active' ? 'default' : 'secondary'}>{usageStats.status}</Badge>
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid gap-6 md:grid-cols-3">
-                                {renderProgressBar(usageStats.usage.clients, usageStats.limits.max_clients, "Clientes")}
-                                {renderProgressBar(usageStats.usage.cases, usageStats.limits.max_cases, "Casos")}
-                                {renderProgressBar(
-                                    parseFloat((usageStats.usage.storage_mb / 1024).toFixed(2)),
-                                    usageStats.limits.storage_mb === "Ilimitado" ? "Ilimitado" : parseFloat((usageStats.limits.storage_mb as number / 1024).toFixed(2)),
-                                    "Almacenamiento (GB)"
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    {/* Plan Gratuito */}
-                    <Card className={!isSubscribed ? 'border-blue-500 border-2' : 'opacity-60'}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><CheckCircle className="text-gray-400" /> Plan Básico</CardTitle>
-                            <CardDescription>Ideal para empezar a organizar tus primeros casos.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">Gratis</p>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-3">
-                                {planFeatures.free.map(feature => (
-                                    <li key={feature} className="flex items-center gap-2">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            {!isSubscribed && (
-                                <Button variant="outline" disabled className="w-full">Tu Plan Actual</Button>
-                            )}
-                        </CardFooter>
-                    </Card>
-
-                    {/* Plan Profesional */}
-                    <Card className={isSubscribed ? 'border-green-500 border-2' : ''}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Star className="text-yellow-400" /> Plan Profesional</CardTitle>
-                            <CardDescription>Desbloquea todo el potencial de LexControl sin límites.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">$200 <span className="text-lg font-normal text-muted-foreground">/ mes</span></p>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-3">
-                                {planFeatures.solo.map(feature => (
-                                    <li key={feature} className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-blue-500" />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            {isSubscribed ? (
-                                <Button onClick={handleManageSubscription} disabled={isLoading} className='w-full cursor-pointer'>
-                                    {isLoading ? 'Cargando...' : 'Gestionar Suscripción'}
-                                </Button>
-                            ) : (
-                                <Button onClick={handleUpgrade} disabled={isLoading} className='w-full cursor-pointer'>
-                                    {isLoading ? 'Procesando...' : 'Actualizar a Profesional'}
-                                </Button>
-                            )}
-                        </CardFooter>
-                    </Card>
-                </div>
+        <div className="container mx-auto p-4 md:p-8 space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold">Suscripción</h1>
+                <p className="text-muted-foreground">Gestiona tu plan y accede a todas las funcionalidades de LexControl.</p>
             </div>
-        </ProtectedRoute>
+
+            {/* Usage Summary */}
+            {usageStats && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Uso del Plan Actual</CardTitle>
+                        <CardDescription>
+                            Estás en el plan <span className="font-bold uppercase">{usageStats.plan}</span>.
+                            Estado: <Badge variant={usageStats.status === 'active' ? 'default' : 'secondary'}>{usageStats.status}</Badge>
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid gap-6 md:grid-cols-3">
+                            {renderProgressBar(usageStats.usage.clients, usageStats.limits.max_clients, "Clientes")}
+                            {renderProgressBar(usageStats.usage.cases, usageStats.limits.max_cases, "Casos")}
+                            {renderProgressBar(
+                                parseFloat((usageStats.usage.storage_mb / 1024).toFixed(2)),
+                                usageStats.limits.storage_mb === "Ilimitado" ? "Ilimitado" : parseFloat((usageStats.limits.storage_mb as number / 1024).toFixed(2)),
+                                "Almacenamiento (GB)"
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                {/* Plan Gratuito */}
+                <Card className={!isSubscribed ? 'border-blue-500 border-2' : 'opacity-60'}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><CheckCircle className="text-gray-400" /> Plan Básico</CardTitle>
+                        <CardDescription>Ideal para empezar a organizar tus primeros casos.</CardDescription>
+                        <p className="text-3xl font-bold mt-2">Gratis</p>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {planFeatures.free.map(feature => (
+                                <li key={feature} className="flex items-center gap-2">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        {!isSubscribed && (
+                            <Button variant="outline" disabled className="w-full">Tu Plan Actual</Button>
+                        )}
+                    </CardFooter>
+                </Card>
+
+                {/* Plan Profesional */}
+                <Card className={isSubscribed ? 'border-green-500 border-2' : ''}>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Star className="text-yellow-400" /> Plan Profesional</CardTitle>
+                        <CardDescription>Desbloquea todo el potencial de LexControl sin límites.</CardDescription>
+                        <p className="text-3xl font-bold mt-2">$200 <span className="text-lg font-normal text-muted-foreground">/ mes</span></p>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {planFeatures.solo.map(feature => (
+                                <li key={feature} className="flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-blue-500" />
+                                    <span>{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        {isSubscribed ? (
+                            <Button onClick={handleManageSubscription} disabled={isLoading} className='w-full cursor-pointer'>
+                                {isLoading ? 'Cargando...' : 'Gestionar Suscripción'}
+                            </Button>
+                        ) : (
+                            <Button onClick={handleUpgrade} disabled={isLoading} className='w-full cursor-pointer'>
+                                {isLoading ? 'Procesando...' : 'Actualizar a Profesional'}
+                            </Button>
+                        )}
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+export default function SubscriptionPage() {
+    return (
+        <Suspense fallback={<div>Cargando suscripción...</div>}>
+            <ProtectedRoute allowedRoles={['owner', 'lawyer']}>
+                <SubscriptionContent />
+            </ProtectedRoute>
+        </Suspense>
     );
 }
