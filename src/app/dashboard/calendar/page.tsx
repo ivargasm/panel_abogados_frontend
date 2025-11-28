@@ -335,11 +335,11 @@ export default function CalendarPage() {
 
     return (
         <ProtectedRoute>
-            <div className="h-[calc(100vh-2rem)] flex flex-col gap-4">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
+            <div className="flex flex-col gap-4 h-auto lg:h-[calc(100vh-2rem)]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:h-full min-h-0">
 
                     {/* Sidebar */}
-                    <Card className="lg:col-span-3 flex flex-col h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
+                    <Card className="lg:col-span-3 flex flex-col lg:h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
                         <div className="p-4 space-y-6">
                             <Button
                                 className="w-full justify-start text-lg h-12"
@@ -349,7 +349,7 @@ export default function CalendarPage() {
                                 <Plus className="mr-2 h-5 w-5" /> Añadir Evento
                             </Button>
 
-                            <div className="rounded-md border bg-card">
+                            <div className="rounded-md border bg-card w-fit mx-auto lg:mx-0">
                                 <Calendar
                                     mode="single"
                                     selected={date}
@@ -409,9 +409,9 @@ export default function CalendarPage() {
                     </Card>
 
                     {/* Main Calendar Area */}
-                    <Card className="lg:col-span-9 flex flex-col h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
+                    <Card className="lg:col-span-9 flex flex-col h-[600px] lg:h-full border-none shadow-none bg-transparent lg:bg-card lg:border lg:shadow-sm">
                         <CardContent className="p-0 h-full flex flex-col">
-                            <div className="flex-1 p-4 h-full">
+                            <div className="flex-1 p-4 h-full max-w-full overflow-x-auto">
                                 <FullCalendar
                                     ref={calendarRef}
                                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}

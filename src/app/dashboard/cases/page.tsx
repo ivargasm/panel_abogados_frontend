@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Calendar as CalendarIcon, Edit, Trash2, FileText, MessageSquare, CheckSquare, Briefcase, User as UserIcon, Clock, ExternalLink } from 'lucide-react';
+import { Plus, Search, Filter, Calendar as CalendarIcon, Edit, Trash2, FileText, MessageSquare, CheckSquare, Briefcase, User as UserIcon, Clock, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -377,8 +377,8 @@ export default function CasesPage() {
     useEffect(() => {
         if (filteredCases.length > 0) {
             const isSelectedInList = selectedCase && filteredCases.some(c => c.id === selectedCase.id);
-            if (!isSelectedInList) {
-                setSelectedCase(filteredCases[0]);
+            if (selectedCase && !isSelectedInList) {
+                setSelectedCase(null);
             }
         } else {
             setSelectedCase(null);
@@ -398,20 +398,20 @@ export default function CasesPage() {
 
     return (
         <ProtectedRoute>
-            <div className="h-[calc(100vh-2rem)] flex flex-col gap-4">
+            <div className="flex flex-col gap-4 h-full lg:h-[calc(100vh-2rem)]">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Casos</h1>
                         <p className="text-muted-foreground">Gestiona todos los casos de tu despacho.</p>
                     </div>
-                    <Button onClick={() => { setEditingCase(null); setIsModalOpen(true); }}>
+                    <Button onClick={() => { setEditingCase(null); setIsModalOpen(true); }} className="shrink-0">
                         <Plus className="h-4 w-4 mr-2" /> Añadir Caso
                     </Button>
                 </div>
 
                 {/* Búsqueda y Filtros */}
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -421,38 +421,40 @@ export default function CasesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Estado" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Estados</SelectItem>
-                            <SelectItem value="active">Activo</SelectItem>
-                            <SelectItem value="discovery">Descubrimiento</SelectItem>
-                            <SelectItem value="trial">Juicio</SelectItem>
-                            <SelectItem value="on_hold">En Espera</SelectItem>
-                            <SelectItem value="closed">Cerrado</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={clientFilter} onValueChange={setClientFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Cliente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Clientes</SelectItem>
-                            {clients.map(client => (
-                                <SelectItem key={client.id} value={String(client.id)}>
-                                    {client.full_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Estado" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los Estados</SelectItem>
+                                <SelectItem value="active">Activo</SelectItem>
+                                <SelectItem value="discovery">Descubrimiento</SelectItem>
+                                <SelectItem value="trial">Juicio</SelectItem>
+                                <SelectItem value="on_hold">En Espera</SelectItem>
+                                <SelectItem value="closed">Cerrado</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select value={clientFilter} onValueChange={setClientFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Cliente" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los Clientes</SelectItem>
+                                {clients.map(client => (
+                                    <SelectItem key={client.id} value={String(client.id)}>
+                                        {client.full_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Layout de dos paneles */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
                     {/* Panel Izquierdo - Lista de Casos */}
-                    <Card className="lg:col-span-5 flex flex-col h-full min-h-0">
+                    <Card className={`lg:col-span-5 flex flex-col h-[500px] lg:h-full min-h-0 ${selectedCase ? 'hidden lg:flex' : 'flex'}`}>
                         <CardHeader className="pb-3">
                             <CardTitle>Lista de Casos</CardTitle>
                             <CardDescription>{filteredCases.length} caso{filteredCases.length !== 1 ? 's' : ''}</CardDescription>
@@ -471,7 +473,7 @@ export default function CasesPage() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <p className="font-semibold truncate">{caseItem.title}</p>
-                                                        <Badge variant={getStatusColor(caseItem.status) as any}>
+                                                        <Badge variant={getStatusColor(caseItem.status) as any} className="shrink-0">
                                                             {caseItem.status}
                                                         </Badge>
                                                     </div>
@@ -484,8 +486,11 @@ export default function CasesPage() {
                                                         </p>
                                                     )}
                                                 </div>
+                                                <div className="lg:hidden self-center">
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                </div>
                                                 {selectedCase?.id === caseItem.id && (
-                                                    <div className="w-1 h-12 bg-primary rounded-full" />
+                                                    <div className="hidden lg:block w-1 h-12 bg-primary rounded-full" />
                                                 )}
                                             </div>
                                         </div>
@@ -501,83 +506,95 @@ export default function CasesPage() {
                     </Card>
 
                     {/* Panel Derecho - Detalles del Caso */}
-                    <Card className="lg:col-span-7 flex flex-col h-full min-h-0">
+                    <Card className={`lg:col-span-7 flex flex-col h-full min-h-0 ${selectedCase ? 'flex' : 'hidden lg:flex'}`}>
                         {selectedCase ? (
                             <div className="flex flex-col h-full">
                                 {/* Header del Caso */}
-                                <div className="p-6 border-b">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h2 className="text-2xl font-bold">{selectedCase.title}</h2>
-                                            {selectedCase.case_number && (
-                                                <p className="text-muted-foreground">Caso #{selectedCase.case_number}</p>
-                                            )}
+                                <div className="p-4 sm:p-6 border-b">
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setSelectedCase(null)}>
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </Button>
+                                                <div className="min-w-0">
+                                                    <h2 className="text-xl sm:text-2xl font-bold truncate">{selectedCase.title}</h2>
+                                                    {selectedCase.case_number && (
+                                                        <p className="text-muted-foreground text-sm">Caso #{selectedCase.case_number}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 shrink-0">
+                                                <Button variant="outline" size="icon" onClick={() => { setEditingCase(selectedCase); setIsModalOpen(true); }}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="destructive" size="icon">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>¿Eliminar caso?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta acción marcará el caso como inactivo.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteCase(selectedCase.id)}>
+                                                                Eliminar
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                            <Button onClick={() => router.push(`/dashboard/cases/${selectedCase.id}`)}>
-                                                <ExternalLink className="h-4 w-4 mr-2" />
-                                                Abrir Caso Completo
-                                            </Button>
-                                            <Button variant="outline" onClick={() => { setEditingCase(selectedCase); setIsModalOpen(true); }}>
-                                                <Edit className="h-4 w-4 mr-2" /> Editar
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="destructive" size="icon">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Eliminar caso?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Esta acción marcará el caso como inactivo.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteCase(selectedCase.id)}>
-                                                            Eliminar
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
+                                        <Button className="w-full sm:w-auto" onClick={() => router.push(`/dashboard/cases/${selectedCase.id}`)}>
+                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                            Abrir Caso Completo
+                                        </Button>
                                     </div>
                                 </div>
 
                                 {/* Pestañas */}
                                 <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
-                                    <div className="border-b px-6">
-                                        <TabsList className="h-12 gap-2">
+                                    <div className="border-b px-4 sm:px-6 overflow-x-auto">
+                                        <TabsList className="h-12 gap-2 w-full justify-start sm:w-auto">
                                             <TabsTrigger value="overview" className="gap-2">
                                                 <Briefcase className="h-4 w-4" />
-                                                Resumen
+                                                <span className="hidden sm:inline">Resumen</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="documents" className="gap-2">
                                                 <FileText className="h-4 w-4" />
-                                                Documentos ({caseDocuments.length})
+                                                <span className="hidden sm:inline">Documentos</span>
+                                                <span className="sm:hidden">Docs</span>
+                                                <span className="hidden sm:inline">({caseDocuments.length})</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="updates" className="gap-2">
                                                 <CheckSquare className="h-4 w-4" />
-                                                Actualizaciones ({caseUpdates.length})
+                                                <span className="hidden sm:inline">Actualizaciones</span>
+                                                <span className="sm:hidden">Updates</span>
+                                                <span className="hidden sm:inline">({caseUpdates.length})</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="communication" className="gap-2">
                                                 <MessageSquare className="h-4 w-4" />
-                                                Comunicación
+                                                <span className="hidden sm:inline">Comunicación</span>
+                                                <span className="sm:hidden">Msgs</span>
                                             </TabsTrigger>
                                         </TabsList>
                                     </div>
 
                                     <div className="flex-1 min-h-0">
                                         <ScrollArea className="h-full">
-                                            <div className="p-6">
+                                            <div className="p-4 sm:p-6">
                                                 <TabsContent value="overview" className="mt-0">
                                                     <div className="space-y-6">
                                                         {/* Resumen del Caso */}
                                                         <div>
                                                             <h3 className="text-lg font-semibold mb-4">Resumen del Caso</h3>
-                                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                                                 <div>
                                                                     <p className="text-muted-foreground">Cliente</p>
                                                                     <p className="font-medium">{selectedCase.client.full_name}</p>
@@ -595,7 +612,7 @@ export default function CasesPage() {
                                                                     </p>
                                                                 </div>
                                                                 {selectedCase.description && (
-                                                                    <div className="col-span-2">
+                                                                    <div className="sm:col-span-2">
                                                                         <p className="text-muted-foreground">Descripción</p>
                                                                         <p className="font-medium">{selectedCase.description}</p>
                                                                     </div>

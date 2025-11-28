@@ -280,10 +280,11 @@ export default function CaseDetailPage() {
 
                     {/* Tabs */}
                     <Tabs defaultValue="progress" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-6">
-                            <TabsTrigger value="progress">Progreso del Caso</TabsTrigger>
+                        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
+                            <TabsTrigger value="progress" className="flex-1 min-w-[150px]">Progreso del Caso</TabsTrigger>
                             <TabsTrigger
                                 value="financial"
+                                className="flex-1 min-w-[150px]"
                                 onClick={() => !invoice && !billingError && fetchBilling()}
                             >
                                 Resumen Financiero
@@ -292,7 +293,7 @@ export default function CaseDetailPage() {
 
                         {/* Tab: Progreso del Caso */}
                         <TabsContent value="progress">
-                            <div className="bg-white rounded-lg shadow-sm p-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                                 {caseDetails.updates.length > 0 ? (
                                     <div className="space-y-8">
                                         {caseDetails.updates.map((update, index) => (
@@ -353,8 +354,8 @@ export default function CaseDetailPage() {
                                             <CardHeader>
                                                 <CardTitle>Lista de Transacciones</CardTitle>
                                             </CardHeader>
-                                            <CardContent className="p-0">
-                                                <Table>
+                                            <CardContent className="p-0 overflow-x-auto">
+                                                <Table className="min-w-[600px]">
                                                     <TableHeader>
                                                         <TableRow>
                                                             <TableHead>Concepto</TableHead>

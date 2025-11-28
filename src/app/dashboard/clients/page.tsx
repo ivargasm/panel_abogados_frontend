@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, MoreVertical, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase } from 'lucide-react';
+import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, MoreVertical, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -286,8 +286,8 @@ export default function ClientsPage() {
 
     return (
         <ProtectedRoute allowedRoles={['owner', 'lawyer']}>
-            <div className="h-[calc(100vh-2rem)] flex flex-col gap-4">
-                <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 h-full lg:h-[calc(100vh-2rem)]">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Clientes</h1>
                         <p className="text-muted-foreground">Gestiona y revisa toda la información de tus clientes.</p>
@@ -296,7 +296,7 @@ export default function ClientsPage() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
                     {/* Lista de Clientes (Izquierda) */}
-                    <Card className="lg:col-span-4 flex flex-col h-full min-h-0 border-r-0 lg:border-r">
+                    <Card className={`lg:col-span-4 flex flex-col h-[500px] lg:h-full min-h-0 border-r-0 lg:border-r ${selectedClient ? 'hidden lg:flex' : 'flex'}`}>
                         <div className="p-4 border-b space-y-4">
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
@@ -309,11 +309,11 @@ export default function ClientsPage() {
                                     />
                                 </div>
                                 <Button onClick={() => { setEditingClient(null); setIsModalOpen(true); }} className="shrink-0">
-                                    <Plus className="h-4 w-4 mr-2" /> Nuevo
+                                    <Plus className="h-4 w-4 mr-2" /> <span className="hidden sm:inline">Nuevo</span>
                                 </Button>
                             </div>
                         </div>
-                        <div className="flex-1 min-h-full">
+                        <div className="flex-1 min-h-0">
                             <ScrollArea className="h-full">
                                 <div className="divide-y">
                                     {filteredClients.map((client) => (
@@ -330,8 +330,11 @@ export default function ClientsPage() {
                                                     <p className="font-medium truncate">{client.full_name}</p>
                                                     <p className="text-sm text-muted-foreground truncate">{client.email}</p>
                                                 </div>
+                                                <div className="lg:hidden">
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                </div>
                                                 {selectedClient?.id === client.id && (
-                                                    <div className="w-1 h-8 bg-primary rounded-full" />
+                                                    <div className="hidden lg:block w-1 h-8 bg-primary rounded-full" />
                                                 )}
                                             </div>
                                         </div>
@@ -347,18 +350,21 @@ export default function ClientsPage() {
                     </Card>
 
                     {/* Detalle del Cliente (Derecha) */}
-                    <Card className="lg:col-span-8 flex flex-col h-full min-h-0 border-l-0 lg:border-l">
+                    <Card className={`lg:col-span-8 flex flex-col h-full min-h-0 border-l-0 lg:border-l ${selectedClient ? 'flex' : 'hidden lg:flex'}`}>
                         {selectedClient ? (
                             <div className="flex flex-col h-full">
                                 {/* Header del Detalle */}
-                                <div className="p-6 border-b flex justify-between items-start">
-                                    <div className="flex gap-4">
-                                        <Avatar className="h-16 w-16">
-                                            <AvatarFallback className="text-xl">{selectedClient.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                <div className="p-4 sm:p-6 border-b flex flex-col sm:flex-row justify-between items-start gap-4">
+                                    <div className="flex gap-4 w-full sm:w-auto">
+                                        <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={() => setSelectedClient(null)}>
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
+                                            <AvatarFallback className="text-lg sm:text-xl">{selectedClient.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                         </Avatar>
-                                        <div>
-                                            <h2 className="text-2xl font-bold">{selectedClient.full_name}</h2>
-                                            <p className="text-muted-foreground">{selectedClient.email}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <h2 className="text-xl sm:text-2xl font-bold truncate">{selectedClient.full_name}</h2>
+                                            <p className="text-sm sm:text-base text-muted-foreground truncate">{selectedClient.email}</p>
                                             <div className="flex gap-2 mt-2">
                                                 <Badge variant={selectedClient.can_view_billing ? "default" : "secondary"}>
                                                     {selectedClient.can_view_billing ? "Portal Activo" : "Sin Portal"}
@@ -366,13 +372,13 @@ export default function ClientsPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" onClick={() => { setEditingClient(selectedClient); setIsModalOpen(true); }}>
+                                    <div className="flex gap-2 w-full sm:w-auto justify-end">
+                                        <Button variant="outline" size="sm" onClick={() => { setEditingClient(selectedClient); setIsModalOpen(true); }}>
                                             <Edit className="h-4 w-4 mr-2" /> Editar
                                         </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="destructive" size="icon">
+                                                <Button variant="destructive" size="icon" className="h-9 w-9">
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </AlertDialogTrigger>
@@ -394,54 +400,68 @@ export default function ClientsPage() {
 
                                 {/* Tabs de Información */}
                                 <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
-                                    <div className="border-b px-6">
-                                        <TabsList className="h-12 gap-2">
+                                    <div className="border-b px-4 sm:px-6 overflow-x-auto">
+                                        <TabsList className="h-12 gap-2 w-full justify-start sm:w-auto">
                                             <TabsTrigger value="info" className="gap-2">
                                                 <UserIcon className="h-4 w-4" />
-                                                Información
+                                                <span className="hidden sm:inline">Información</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="cases" className="gap-2">
                                                 <Briefcase className="h-4 w-4" />
-                                                Casos ({clientCases.length})
+                                                <span className="hidden sm:inline">Casos</span>
+                                                <span className="sm:hidden">({clientCases.length})</span>
+                                                <span className="hidden sm:inline">({clientCases.length})</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="documents" className="gap-2">
                                                 <FileText className="h-4 w-4" />
-                                                Documentos ({clientDocuments.length})
+                                                <span className="hidden sm:inline">Docs</span>
+                                                <span className="sm:hidden">({clientDocuments.length})</span>
+                                                <span className="hidden sm:inline">({clientDocuments.length})</span>
                                             </TabsTrigger>
                                             <TabsTrigger value="billing" className="gap-2">
                                                 <DollarSign className="h-4 w-4" />
-                                                Facturación ({clientInvoices.length})
+                                                <span className="hidden sm:inline">Facturación</span>
+                                                <span className="sm:hidden">({clientInvoices.length})</span>
+                                                <span className="hidden sm:inline">({clientInvoices.length})</span>
                                             </TabsTrigger>
                                         </TabsList>
                                     </div>
 
                                     <div className="flex-1 min-h-0">
                                         <ScrollArea className="h-full">
-                                            <div className="p-6">
+                                            <div className="p-4 sm:p-6">
                                                 <TabsContent value="info" className="mt-0">
                                                     <div className="grid gap-8">
                                                         {/* Contact Details */}
                                                         <div>
                                                             <h3 className="text-lg font-semibold mb-4">Detalles de Contacto</h3>
                                                             <div className="grid gap-4 text-sm">
-                                                                <div className="flex items-center gap-3">
-                                                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                                                    <span className="text-muted-foreground w-24">Email:</span>
-                                                                    <span>{selectedClient.email || 'No registrado'}</span>
+                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground w-24">
+                                                                        <Mail className="h-4 w-4" />
+                                                                        <span>Email:</span>
+                                                                    </div>
+                                                                    <span className="break-all">{selectedClient.email || 'No registrado'}</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <Phone className="h-4 w-4 text-muted-foreground" />
-                                                                    <span className="text-muted-foreground w-24">Teléfono:</span>
+                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground w-24">
+                                                                        <Phone className="h-4 w-4" />
+                                                                        <span>Teléfono:</span>
+                                                                    </div>
                                                                     <span>{selectedClient.phone_number || 'No registrado'}</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                                                                    <span className="text-muted-foreground w-24">Dirección:</span>
+                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground w-24">
+                                                                        <MapPin className="h-4 w-4" />
+                                                                        <span>Dirección:</span>
+                                                                    </div>
                                                                     <span>{selectedClient.address || 'No registrada'}</span>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <UserIcon className="h-4 w-4 text-muted-foreground" />
-                                                                    <span className="text-muted-foreground w-24">RFC:</span>
+                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                    <div className="flex items-center gap-2 text-muted-foreground w-24">
+                                                                        <UserIcon className="h-4 w-4" />
+                                                                        <span>RFC:</span>
+                                                                    </div>
                                                                     <span>{selectedClient.rfc || 'No registrado'}</span>
                                                                 </div>
                                                             </div>

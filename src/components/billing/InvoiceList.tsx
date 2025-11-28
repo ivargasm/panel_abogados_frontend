@@ -112,10 +112,10 @@ export default function InvoiceList() {
     });
 
     return (
-        <div className="space-y-4 bg-white p-4 rounded-lg border shadow-sm">
+        <div className="space-y-4 bg-white p-4 rounded-lg border shadow-sm w-full max-w-[100vw] sm:max-w-full">
             {/* Search and Filters */}
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                <div className="relative w-full md:w-96">
+            <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+                <div className="relative w-full lg:w-96">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Buscar por # Factura, Cliente o Caso..."
@@ -124,9 +124,9 @@ export default function InvoiceList() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[140px] bg-gray-50 border-gray-200">
+                        <SelectTrigger className="w-full sm:w-[140px] bg-gray-50 border-gray-200">
                             <SelectValue placeholder="Estado: Todos" />
                         </SelectTrigger>
                         <SelectContent>
@@ -138,11 +138,11 @@ export default function InvoiceList() {
                         </SelectContent>
                     </Select>
 
-                    <Button variant="outline" className="bg-gray-50 border-gray-200 text-gray-600">
+                    <Button variant="outline" className="bg-gray-50 border-gray-200 text-gray-600 w-full sm:w-auto">
                         Rango de Fechas
                     </Button>
 
-                    <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => {
+                    <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full sm:w-auto" onClick={() => {
                         setSearchTerm("");
                         setStatusFilter("all");
                     }}>
@@ -152,8 +152,8 @@ export default function InvoiceList() {
             </div>
 
             {/* Table */}
-            <div className="rounded-md">
-                <Table>
+            <div className="rounded-md border overflow-x-auto w-full">
+                <Table className="min-w-[600px]">
                     <TableHeader className="bg-gray-50">
                         <TableRow>
                             <TableHead className="w-[40px]">
@@ -240,8 +240,8 @@ export default function InvoiceList() {
             </div>
 
             {/* Pagination (Mocked for visual completeness) */}
-            <div className="flex items-center justify-between px-2">
-                <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-2 gap-4">
+                <div className="text-sm text-muted-foreground text-center sm:text-left">
                     Mostrando 1 a {filteredInvoices.length} de {filteredInvoices.length} facturas
                 </div>
                 <div className="flex items-center space-x-2">

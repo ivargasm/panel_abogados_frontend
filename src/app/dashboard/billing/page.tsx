@@ -39,13 +39,13 @@ export default function BillingPage() {
     }, []);
 
     return (
-        <div className="flex flex-col gap-6 md:w-full">
-            <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-6 w-full max-w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Facturación y Pagos</h1>
                     <p className="text-muted-foreground">Gestiona todas las facturas y pagos de tu firma.</p>
                 </div>
-                <Button onClick={() => setIsCreateModalOpen(true)} className="bg-[#1e293b] hover:bg-[#0f172a]">
+                <Button onClick={() => setIsCreateModalOpen(true)} className="bg-[#1e293b] hover:bg-[#0f172a] w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" />
                     Crear Nueva Factura
                 </Button>
@@ -87,7 +87,7 @@ export default function BillingPage() {
                 </Card>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 min-w-0">
                 <div className="flex items-center gap-2 border-b pb-2">
                     <h2 className="text-lg font-semibold">Facturas</h2>
                 </div>

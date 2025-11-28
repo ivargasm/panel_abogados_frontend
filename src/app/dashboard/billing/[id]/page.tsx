@@ -161,7 +161,7 @@ export default function InvoiceDetailPage() {
     if (!invoice) return null;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full max-w-full overflow-x-hidden p-4 md:p-8 bg-gray-50 min-h-screen">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -238,8 +238,8 @@ export default function InvoiceDetailPage() {
                         Agregar Concepto
                     </Button>
                 </CardHeader>
-                <CardContent>
-                    <Table>
+                <CardContent className="overflow-x-auto">
+                    <Table className="min-w-[600px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Descripción</TableHead>
@@ -294,7 +294,7 @@ export default function InvoiceDetailPage() {
                     <CardTitle>Historial de Pagos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                    <Table className="w-full overflow-x-auto">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Fecha</TableHead>
