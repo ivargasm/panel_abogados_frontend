@@ -26,9 +26,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
     userAuth: false,
-    // url: 'http://localhost:8000',
-    url: 'https://lexcontrol-648260980931.us-central1.run.app', // ✅ HTTPS para evitar Mixed Content
-    // url: "https://gfncp124-8000.use.devtunnels.ms",
+    url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     setUser: (user) => set({ user }),
     loginUser: async (email, password) => {
         // 1. Hacemos el login para obtener la cookie
