@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/Store";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Scale, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { Eye, EyeOff, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -206,10 +207,12 @@ export default function RegisterPage() {
             {/* Right Panel - Image */}
             <div className="hidden lg:block w-1/2 bg-slate-900 relative">
                 <div className="absolute inset-0">
-                    <img
-                        src="/register-visual.png"
+                    <Image
+                        src="https://res.cloudinary.com/ivargasm/image/upload/v1764351068/LexControl/register-visual_knlibj.jpg"
                         alt="Legal Library"
+                        fill
                         className="w-full h-full object-cover opacity-90"
+                        priority
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
                 </div>

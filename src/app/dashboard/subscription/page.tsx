@@ -11,6 +11,21 @@ import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge } from "@/components/ui/badge";
 
+interface UsageStats {
+    plan: string;
+    status: string;
+    usage: {
+        clients: number;
+        cases: number;
+        storage_mb: number;
+    };
+    limits: {
+        max_clients: number | string;
+        max_cases: number | string;
+        storage_mb: number | string;
+    };
+}
+
 const planFeatures = {
     free: [
         "Hasta 3 casos activos",
@@ -33,7 +48,7 @@ export default function SubscriptionPage() {
     const [isLoading, setIsLoading] = useState(false);
     const searchParams = useSearchParams();
     const router = useRouter();
-    const [usageStats, setUsageStats] = useState<any>(null);
+    const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
     useEffect(() => {
         const paymentStatus = searchParams.get('payment');
@@ -136,7 +151,7 @@ export default function SubscriptionPage() {
                                 {renderProgressBar(usageStats.usage.cases, usageStats.limits.max_cases, "Casos")}
                                 {renderProgressBar(
                                     parseFloat((usageStats.usage.storage_mb / 1024).toFixed(2)),
-                                    usageStats.limits.storage_mb === Infinity ? "Ilimitado" : parseFloat((usageStats.limits.storage_mb / 1024).toFixed(2)),
+                                    usageStats.limits.storage_mb === "Ilimitado" ? "Ilimitado" : parseFloat((usageStats.limits.storage_mb as number / 1024).toFixed(2)),
                                     "Almacenamiento (GB)"
                                 )}
                             </div>

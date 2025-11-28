@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, MoreVertical, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Mail, Phone, MapPin, Calendar, Clock, Edit, Trash2, User as UserIcon, FileText, DollarSign, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,16 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import {
     AlertDialog,
@@ -163,6 +157,7 @@ export default function ClientsPage() {
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [editingClient, setEditingClient] = useState<Client | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -186,14 +181,14 @@ export default function ClientsPage() {
                 if (data.length > 0 && !selectedClient) {
                     setSelectedClient(data[0]);
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Error al cargar clientes');
             } finally {
                 setLoading(false);
             }
         };
         fetchClients();
-    }, [url]);
+    }, [selectedClient, url]);
 
     // Cargar datos del cliente seleccionado
     useEffect(() => {
@@ -261,7 +256,7 @@ export default function ClientsPage() {
                 setSelectedClient(created);
                 toast.success('Cliente creado');
             }
-        } catch (err) {
+        } catch {
             toast.error('Error al guardar cliente');
         }
     };
@@ -275,7 +270,7 @@ export default function ClientsPage() {
                 setSelectedClient(newClients[0] || null);
             }
             toast.success("Cliente eliminado");
-        } catch (err) {
+        } catch {
             toast.error('No se pudo eliminar el cliente');
         }
     };

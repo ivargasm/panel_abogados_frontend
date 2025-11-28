@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Download, CreditCard, Pencil, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, CreditCard, Pencil, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import RecordPaymentModal from "@/components/billing/RecordPaymentModal";
@@ -64,7 +64,7 @@ export default function InvoiceDetailPage() {
     const [selectedItemIndex, setSelectedItemIndex] = useState(-1);
     const [itemToDelete, setItemToDelete] = useState<{ item: InvoiceItem, index: number } | null>(null);
 
-    const fetchInvoice = async () => {
+    const fetchInvoice = React.useCallback(async () => {
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/${params.id}`, {
                 credentials: 'include'
@@ -82,13 +82,13 @@ export default function InvoiceDetailPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [params.id, router]);
 
     useEffect(() => {
         if (params.id) {
             fetchInvoice();
         }
-    }, [params.id]);
+    }, [params.id, fetchInvoice]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {

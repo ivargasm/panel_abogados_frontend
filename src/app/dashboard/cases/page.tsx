@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Calendar as CalendarIcon, Edit, Trash2, FileText, MessageSquare, CheckSquare, Briefcase, User as UserIcon, Clock, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileText, MessageSquare, CheckSquare, Briefcase, User as UserIcon, Clock, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 
 // Importaciones de tu lógica de negocio
 import { useAuthStore } from '@/app/store/Store';
@@ -120,6 +120,7 @@ function CaseForm({ caseItem, clients, onSave, onFinish }: { caseItem: Partial<C
 }
 
 // --- Componente del Formulario para Crear Actualización ---
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function UpdateForm({ caseId, onSave, onFinish }: { caseId: number, onSave: (updateData: CaseUpdateData) => Promise<void>, onFinish: () => void }) {
     const [updateData, setUpdateData] = useState<CaseUpdateData>({
         update_text: '',
@@ -148,7 +149,7 @@ function UpdateForm({ caseId, onSave, onFinish }: { caseId: number, onSave: (upd
                 <Label htmlFor="status">Estado</Label>
                 <Select
                     value={updateData.status}
-                    onValueChange={(value: any) => setUpdateData(prev => ({ ...prev, status: value }))}
+                    onValueChange={(value: CaseUpdateData['status']) => setUpdateData(prev => ({ ...prev, status: value }))}
                 >
                     <SelectTrigger>
                         <SelectValue />
@@ -254,6 +255,7 @@ export default function CasesPage() {
     const [selectedCase, setSelectedCase] = useState<Case | null>(null);
     const [editingCase, setEditingCase] = useState<Case | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -282,14 +284,14 @@ export default function CasesPage() {
                 if (casesData.length > 0 && !selectedCase) {
                     setSelectedCase(casesData[0]);
                 }
-            } catch (err) {
+            } catch {
                 toast.error('Error al cargar datos');
             } finally {
                 setLoading(false);
             }
         };
         fetchData();
-    }, [url]);
+    }, [selectedCase, url]);
 
     // Cargar detalles del caso seleccionado
     useEffect(() => {
@@ -343,7 +345,7 @@ export default function CasesPage() {
             const updates = await getCaseUpdates(selectedCase.id, url);
             setCaseUpdates(updates);
             toast.success('Actualización creada');
-        } catch (err) {
+        } catch {
             toast.error('Error al crear actualización');
         }
     };
@@ -357,7 +359,7 @@ export default function CasesPage() {
                 setSelectedCase(newCases[0] || null);
             }
             toast.success("Caso eliminado");
-        } catch (err) {
+        } catch {
             toast.error('No se pudo eliminar el caso');
         }
     };
@@ -473,7 +475,7 @@ export default function CasesPage() {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <p className="font-semibold truncate">{caseItem.title}</p>
-                                                        <Badge variant={getStatusColor(caseItem.status) as any} className="shrink-0">
+                                                        <Badge variant={getStatusColor(caseItem.status)} className="shrink-0">
                                                             {caseItem.status}
                                                         </Badge>
                                                     </div>
@@ -601,7 +603,7 @@ export default function CasesPage() {
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-muted-foreground">Estado</p>
-                                                                    <Badge variant={getStatusColor(selectedCase.status) as any}>
+                                                                    <Badge variant={getStatusColor(selectedCase.status)}>
                                                                         {selectedCase.status}
                                                                     </Badge>
                                                                 </div>

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from 'next/link';
-import { Menu, X, FolderKanban, Users, CalendarDays, LogOut, Sun, Moon, Briefcase } from 'lucide-react';
+import { Menu, X, LogOut, Sun, Moon } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../store/Store';
 import { Button } from '@/components/ui/button';
 
 export default function LandingNavbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [darkMode, setDarkMode] = useState(false);
     const { user, logout } = useAuthStore();
 
@@ -114,7 +115,7 @@ export default function LandingNavbar() {
                                 </Link>
                                 <Link
                                     href="/auth/register"
-                                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                    className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                                 >
                                     Solicitar Demo
                                 </Link>

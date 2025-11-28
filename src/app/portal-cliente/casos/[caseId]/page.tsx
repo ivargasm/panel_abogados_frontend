@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/app/store/Store';
 import { getMyCaseDetails } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CheckCircle2, FileText, Users, DollarSign } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +25,6 @@ const caseStatusConfig: { [key: string]: { label: string; className: string } } 
     "on_hold": { label: "En Espera", className: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100" },
     "pending_review": { label: "Pendiente de Revisión", className: "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100" },
     "closed": { label: "Cerrado", className: "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100" },
-};
-
-// Configuración de estados de actualización
-const updateStatusConfig: { [key: string]: string } = {
-    "Completado": "bg-green-100 text-green-800 border-green-200",
-    "En Proceso": "bg-blue-100 text-blue-800 border-blue-200",
-    "Pendiente": "bg-yellow-100 text-yellow-800 border-yellow-200",
-    "Cancelado": "bg-red-100 text-red-800 border-red-200"
 };
 
 // Configuración de estados de transacción

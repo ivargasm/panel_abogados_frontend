@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { reset_password } from "../../lib/api";
 import { useAuthStore } from "../../store/Store";
 import Link from "next/link";
-import { Eye, EyeOff, Scale, ArrowLeft, Check, X } from "lucide-react";
+import { Eye, EyeOff, Scale, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

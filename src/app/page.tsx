@@ -21,7 +21,7 @@ export default function LandingPage() {
                             <div className="mt-10 flex items-center gap-x-6">
                                 <Link
                                     href="/auth/register"
-                                    className="rounded-md bg-primary px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                    className="rounded-md bg-primary px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                                 >
                                     Solicitar Demo
                                 </Link>
@@ -129,7 +129,7 @@ export default function LandingPage() {
                             </svg>
                             <blockquote className="mt-10">
                                 <p className="text-xl font-medium leading-8 text-gray-900 sm:text-2xl sm:leading-9">
-                                    "LexControl ha transformado la eficiencia de nuestro despacho. Ahorramos al menos 10 horas a la semana en tareas administrativas, lo que nos permite enfocarnos más en nuestros clientes. Es una herramienta indispensable para cualquier práctica legal moderna."
+                                    &quot;LexControl ha transformado la eficiencia de nuestro despacho. Ahorramos al menos 10 horas a la semana en tareas administrativas, lo que nos permite enfocarnos más en nuestros clientes. Es una herramienta indispensable para cualquier práctica legal moderna.&quot;
                                 </p>
                             </blockquote>
                             <figcaption className="mt-10 flex items-center gap-x-6">
@@ -191,7 +191,7 @@ export default function LandingPage() {
                             </ul>
                             <Link
                                 href="/auth/register"
-                                className="mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-primary ring-1 ring-inset ring-primary hover:ring-primary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                className="mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-primary ring-1 ring-inset ring-primary hover:ring-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                             >
                                 Comenzar
                             </Link>
@@ -235,7 +235,7 @@ export default function LandingPage() {
                             </ul>
                             <Link
                                 href="#contact"
-                                className="mt-8 block rounded-md bg-white px-3.5 py-2.5 text-center text-sm font-semibold text-primary shadow-sm hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                className="mt-8 block rounded-md bg-white px-3.5 py-2.5 text-center text-sm font-semibold text-primary shadow-sm hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                             >
                                 Contáctanos
                             </Link>

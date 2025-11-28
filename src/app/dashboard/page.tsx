@@ -77,7 +77,7 @@ export default function DashboardPage() {
             <div className="container mx-auto p-4 md:p-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold">Bienvenido, {user?.username}</h1>
+                    <h1 className="text-3xl font-bold">Bienvenido, {user?.full_name}</h1>
                     <p className="text-muted-foreground">Gestiona tu práctica legal desde un solo lugar.</p>
                 </div>
 

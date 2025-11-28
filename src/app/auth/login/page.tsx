@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../../store/Store";
 import Link from "next/link";
-import { Eye, EyeOff, Lock, Scale, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
+import { Eye, EyeOff, Lock, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,10 +73,12 @@ export default function LoginPage() {
                 {/* Central Visual Placeholder */}
                 <div className="relative z-10 flex-1 flex items-center justify-center">
                     <div className="w-full max-w-md aspect-square rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
-                        <img
-                            src="/login-visual.png"
+                        <Image
+                            src="https://res.cloudinary.com/ivargasm/image/upload/v1764350297/LexControl/login-visual_a1kj12.jpg"
                             alt="Legal Tech Visualization"
-                            className="w-full h-full object-cover"
+                            fill
+                            className="w-full h-full object-cover opacity-90 rounded-2xl"
+                            priority
                         />
                     </div>
                 </div>

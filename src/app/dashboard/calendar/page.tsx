@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Clock, MapPin, AlignLeft, Trash2, CheckSquare } from 'lucide-react';
+import { Plus, Search, MapPin, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 // FullCalendar Imports
@@ -16,7 +16,7 @@ import { EventSourceInput, EventClickArg, DateSelectArg } from '@fullcalendar/co
 
 // Shadcn UI Imports
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,8 +25,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar"; // Assuming this exists, otherwise we'll use a simple date picker or custom implementation
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 // Business Logic Imports
@@ -250,6 +248,7 @@ export default function CalendarPage() {
     }, [url]);
 
     // Handlers
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleDateSelect = (selectInfo: DateSelectArg) => {
         setSelectedEvent(null);
         setIsModalOpen(true);
@@ -271,7 +270,7 @@ export default function CalendarPage() {
                 toast.success("Evento creado");
             }
             calendarRef.current?.getApi().refetchEvents();
-        } catch (error) {
+        } catch {
             toast.error("Error al guardar evento");
         }
     };
@@ -283,7 +282,7 @@ export default function CalendarPage() {
             toast.success("Evento eliminado");
             calendarRef.current?.getApi().refetchEvents();
             setIsModalOpen(false);
-        } catch (error) {
+        } catch {
             toast.error("Error al eliminar evento");
         }
     };
@@ -306,7 +305,7 @@ export default function CalendarPage() {
                 return matchesSearch && matchesType;
             });
 
-            const formattedEvents = filteredEvents.map((event: { id: any; title: any; start_time: any; end_time: any; is_all_day: any; event_type: string; }) => ({
+            const formattedEvents = filteredEvents.map((event: { id: number; title: string; start_time: string; end_time: string; is_all_day: boolean; event_type: string; }) => ({
                 id: String(event.id),
                 title: event.title,
                 start: event.start_time,

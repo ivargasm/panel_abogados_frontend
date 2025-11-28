@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { login, fetchUser, logout, register } from "../lib/api";
-import { redirect } from 'next/navigation';
 
 interface AuthState {
     user: {
@@ -58,7 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 return;
             }
             set({ userAuth: true, user: data });
-        } catch (error) {
+        } catch {
             // Si falla fetchUser (ej. 401), asumimos que no hay sesión válida
             set({ userAuth: false, user: null });
         }

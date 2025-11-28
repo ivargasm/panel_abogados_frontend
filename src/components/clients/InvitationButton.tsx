@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Mail, RefreshCw, X, CheckCircle, Loader2 } from 'lucide-react';
@@ -33,20 +33,22 @@ export function InvitationButton({ clientId, clientEmail }: InvitationButtonProp
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
 
-    useEffect(() => {
-        loadInvitationStatus();
-    }, [clientId]);
-
-    async function loadInvitationStatus() {
+    const loadInvitationStatus = useCallback(async () => {
         try {
             const status = await getClientInvitationStatus(clientId);
             setInvitationStatus(status);
         } catch (error) {
             console.error('Error loading invitation status:', error);
+            toast.error('Error al cargar estado de invitación');
         } finally {
             setInitialLoading(false);
         }
-    }
+    }, [clientId]);
+
+    useEffect(() => {
+        loadInvitationStatus();
+    }, [clientId, loadInvitationStatus]);
+
 
     async function handleInvite() {
         if (!clientEmail) {
@@ -59,8 +61,8 @@ export function InvitationButton({ clientId, clientEmail }: InvitationButtonProp
             await inviteClient(clientId);
             toast.success('Invitación enviada exitosamente');
             loadInvitationStatus();
-        } catch (error: any) {
-            toast.error(error.message || 'Error al enviar invitación');
+        } catch {
+            toast.error('Error al enviar invitación');
         } finally {
             setLoading(false);
         }
@@ -72,8 +74,8 @@ export function InvitationButton({ clientId, clientEmail }: InvitationButtonProp
             await resendClientInvitation(clientId);
             toast.success('Invitación reenviada exitosamente');
             loadInvitationStatus();
-        } catch (error: any) {
-            toast.error(error.message || 'Error al reenviar invitación');
+        } catch {
+            toast.error('Error al reenviar invitación');
         } finally {
             setLoading(false);
         }
@@ -89,8 +91,8 @@ export function InvitationButton({ clientId, clientEmail }: InvitationButtonProp
             await cancelInvitation(invitationStatus.invitation.id);
             toast.success('Invitación cancelada');
             loadInvitationStatus();
-        } catch (error: any) {
-            toast.error(error.message || 'Error al cancelar invitación');
+        } catch {
+            toast.error('Error al cancelar invitación');
         } finally {
             setLoading(false);
         }

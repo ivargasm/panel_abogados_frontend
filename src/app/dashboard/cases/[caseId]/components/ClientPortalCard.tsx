@@ -29,7 +29,11 @@ export default function ClientPortalCard({ caseDetails }: { caseDetails: Case })
         }
         setIsSubmitting(true);
         try {
-            const inviteData: ClientInviteData = { email };
+            const inviteData: ClientInviteData = {
+                email,
+                case_title: caseDetails.title,
+                client_name: caseDetails.client.full_name,
+            };
             const response = await inviteClient(caseDetails.id, inviteData, url);
             toast.success(response.message || "Invitación enviada con éxito.");
         } catch (error) {

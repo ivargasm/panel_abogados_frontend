@@ -6,12 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import InvoiceList from "@/components/billing/InvoiceList";
 import CreateInvoiceModal from "@/components/billing/CreateInvoiceModal";
-import { useAuthStore } from "@/app/store/Store";
 import { getBillingStats } from "@/app/lib/api";
 
 export default function BillingPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const { user } = useAuthStore();
     const [stats, setStats] = useState({
         total_billed: 0,
         total_collected: 0,

@@ -194,9 +194,8 @@ function ProfileSection() {
             useAuthStore.setState({ user: updatedUser });
 
             toast.success("Foto de perfil actualizada", { id: toastId });
-        } catch (error: any) {
-            console.error("Error uploading profile picture:", error);
-            toast.error(error.message || "Error al subir la foto", { id: toastId });
+        } catch {
+            toast.error("Error al subir la foto", { id: toastId });
         } finally {
             // Limpiar input
             e.target.value = "";
@@ -344,9 +343,8 @@ function SecuritySection() {
                 new_password: "",
                 confirm_password: "",
             });
-        } catch (error: any) {
-            console.error("Error:", error);
-            toast.error(error.message || "No se pudo actualizar la contraseña. Inténtalo de nuevo.");
+        } catch {
+            toast.error("No se pudo actualizar la contraseña. Inténtalo de nuevo.");
         } finally {
             setLoading(false);
         }
