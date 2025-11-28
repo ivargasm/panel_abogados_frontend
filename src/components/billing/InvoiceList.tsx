@@ -45,9 +45,8 @@ interface Invoice {
     due_date: string;
     client_id: number;
     client?: {
-        first_name: string;
-        last_name: string;
-        company_name?: string;
+        full_name: string;
+        email?: string;
     };
     case?: {
         title: string;
@@ -190,7 +189,7 @@ export default function InvoiceList() {
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span className="font-medium text-sm">
-                                                {invoice.client?.company_name || `${invoice.client?.first_name || ''} ${invoice.client?.last_name || ''}`.trim() || 'Cliente Desconocido'}
+                                                {invoice.client?.full_name || 'Cliente Desconocido'}
                                             </span>
                                         </div>
                                     </TableCell>

@@ -605,7 +605,7 @@ export default function ClientsPage() {
                                                             </div>
                                                             <div className="grid gap-4">
                                                                 {clientInvoices.map((invoice) => (
-                                                                    <Card key={invoice.id} className="hover:bg-accent/50 transition-colors cursor-pointer">
+                                                                    <Card key={invoice.id} onClick={() => router.push(`/dashboard/billing/${invoice.id}`)} className="hover:bg-accent/50 transition-colors cursor-pointer">
                                                                         <CardHeader>
                                                                             <div className="flex items-start justify-between">
                                                                                 <div className="flex-1">

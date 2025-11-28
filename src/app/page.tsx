@@ -2,14 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import LandingNavbar from './components/LandingNavbar';
 import { Workflow, MessageSquare, FileText, Check } from 'lucide-react';
 
 export default function LandingPage() {
     return (
         <div className="bg-white">
-            <LandingNavbar />
-
             {/* Hero Section */}
             <section className="relative isolate overflow-hidden bg-white px-6 py-24 sm:py-32 lg:px-8">
                 <div className="mx-auto max-w-7xl">

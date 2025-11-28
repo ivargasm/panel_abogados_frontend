@@ -16,7 +16,9 @@ export default function BillingPage() {
         total_billed: 0,
         total_collected: 0,
         total_due: 0,
-        invoice_count: 0
+        invoice_count: 0,
+        collected_last_30: 0,
+        payment_percentage_change: 0
     });
 
     const fetchStats = async () => {
@@ -56,8 +58,8 @@ export default function BillingPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-[#1e293b]">${stats.total_due.toFixed(2)}</div>
-                        <p className="text-xs font-medium text-green-600 mt-1">
-                            +2.5% vs mes anterior
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Monto total por cobrar
                         </p>
                     </CardContent>
                 </Card>
@@ -66,9 +68,9 @@ export default function BillingPage() {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Vencido</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-[#1e293b]">${(stats.total_billed - stats.total_collected - stats.total_due).toFixed(2)}</div> {/* Assuming this calculation for now or 0 if negative */}
-                        <p className="text-xs font-medium text-red-600 mt-1">
-                            -1.2% vs mes anterior
+                        <div className="text-3xl font-bold text-[#1e293b]">${(stats.total_billed - stats.total_collected - stats.total_due).toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Facturas con fecha vencida
                         </p>
                     </CardContent>
                 </Card>
@@ -77,9 +79,9 @@ export default function BillingPage() {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Pagado (Últimos 30 Días)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-[#1e293b]">${stats.total_collected.toFixed(2)}</div>
-                        <p className="text-xs font-medium text-green-600 mt-1">
-                            +5.8% vs mes anterior
+                        <div className="text-3xl font-bold text-[#1e293b]">${stats.collected_last_30?.toFixed(2) || "0.00"}</div>
+                        <p className={`text-xs font-medium mt-1 ${stats.payment_percentage_change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {stats.payment_percentage_change > 0 ? '+' : ''}{stats.payment_percentage_change?.toFixed(1) || "0.0"}% vs 30 días anteriores
                         </p>
                     </CardContent>
                 </Card>
