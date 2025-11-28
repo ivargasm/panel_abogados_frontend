@@ -21,7 +21,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useAuthStore } from '@/app/store/Store';
 import { getCaseById, getCaseUpdates, createCaseUpdate, updateCaseUpdateStatus, updateCaseUpdate } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import ClientPortalCard from './components/ClientPortalCard';
 import DocumentsCard from './components/DocumentsCard';
 import type { Case, CaseUpdate, CaseUpdateData, UpdateStatus } from '@/app/types';
 
@@ -281,7 +280,6 @@ export default function CaseDetailPage() {
                     </div>
                     <div className="lg:col-span-1 space-y-6">
                         <DocumentsCard caseId={caseId} />
-                        <ClientPortalCard caseDetails={caseDetails} />
                     </div>
                 </div>
                 <EditUpdateModal update={editingUpdate} isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleSaveEdit} />

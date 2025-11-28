@@ -44,6 +44,7 @@ import { useAuthStore } from '@/app/store/Store';
 import { getClients, createClient, updateClient, deleteClient, getCases, getInvoices } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import type { Case, Document, Invoice } from '@/app/types';
+import { InvitationButton } from '@/components/clients/InvitationButton';
 
 // Definimos el tipo para un cliente
 type Client = {
@@ -366,9 +367,10 @@ export default function ClientsPage() {
                                             <h2 className="text-xl sm:text-2xl font-bold truncate">{selectedClient.full_name}</h2>
                                             <p className="text-sm sm:text-base text-muted-foreground truncate">{selectedClient.email}</p>
                                             <div className="flex gap-2 mt-2">
-                                                <Badge variant={selectedClient.can_view_billing ? "default" : "secondary"}>
-                                                    {selectedClient.can_view_billing ? "Portal Activo" : "Sin Portal"}
-                                                </Badge>
+                                                <InvitationButton
+                                                    clientId={selectedClient.id}
+                                                    clientEmail={selectedClient.email || undefined}
+                                                />
                                             </div>
                                         </div>
                                     </div>

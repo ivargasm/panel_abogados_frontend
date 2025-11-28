@@ -5,7 +5,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Briefcase, LayoutDashboard, Settings, User, Calendar, Star, Zap } from 'lucide-react';
+import { Briefcase, LayoutDashboard, Settings, User, Calendar, Zap, BadgeDollarSign } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function NavLinks() {
@@ -16,7 +16,7 @@ export default function NavLinks() {
         { href: '/dashboard/clients', label: 'Clientes', icon: User },
         { href: '/dashboard/cases', label: 'Casos', icon: Briefcase },
         { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
-        { href: '/dashboard/billing', label: 'Facturación', icon: Star },
+        { href: '/dashboard/billing', label: 'Facturación', icon: BadgeDollarSign },
         { href: '/dashboard/subscription', label: 'Suscripción', icon: Zap },
     ];
 
