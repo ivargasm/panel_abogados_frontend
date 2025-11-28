@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/app/store/Store';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import DashboardContent from './DashboardContent';
+import { DashboardWrapper } from './DashboardWrapper';
 
 export default function DashboardPage() {
     const searchParams = useSearchParams();
@@ -31,7 +31,7 @@ export default function DashboardPage() {
     return (
         <ProtectedRoute allowedRoles={['owner', 'lawyer']}>
             <Suspense fallback={<div>Cargando dashboard...</div>}>
-                <DashboardContent />
+                <DashboardWrapper />
             </Suspense>
         </ProtectedRoute>
     );

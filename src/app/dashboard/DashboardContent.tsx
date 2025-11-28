@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/app/store/Store';
 import { Users, Briefcase, Calendar, FileText, CheckCircle2 } from 'lucide-react';
@@ -12,9 +11,7 @@ import { DashboardCard } from '@/app/components/dashboard/DashboardCard';
 import { getDashboardStats, getRecentActivity, getUpcomingDeadlines } from '@/app/lib/api';
 
 export default function DashboardContent() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const { user, userValid } = useAuthStore();
+    const { user } = useAuthStore();
 
     const [stats, setStats] = useState({
         active_cases: 0,
@@ -25,18 +22,6 @@ export default function DashboardContent() {
     const [activities, setActivities] = useState([]);
     const [deadlines, setDeadlines] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const paymentStatus = searchParams.get('payment');
-
-        if (paymentStatus === 'success') {
-            toast.success('¡Pago exitoso!', {
-                description: 'Tu plan ha sido actualizado a Profesional. ¡Bienvenido!',
-            });
-            userValid();
-            router.replace('/dashboard');
-        }
-    }, [searchParams, router, userValid]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
