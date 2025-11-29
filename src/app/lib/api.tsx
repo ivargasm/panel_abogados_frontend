@@ -109,7 +109,7 @@ export async function initiateProfilePictureUpload(fileName: string, fileType: s
 // --- API para Clientes (CRUD Completo) ---
 
 export async function getClients(url: string) {
-    const res = await fetch(`${url}/api/clients`, { credentials: 'include' });
+    const res = await fetch(`${url}/api/clients/`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener los clientes');
     return res.json();
 }
