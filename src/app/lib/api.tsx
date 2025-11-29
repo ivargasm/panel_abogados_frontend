@@ -151,7 +151,7 @@ export async function deleteClient(clientId: number, url: string) {
 
 export async function getCases(url: string, clientId: number | null) {
     const queryParams = clientId ? `?client_id=${clientId}` : '';
-    const res = await fetch(`${url}/api/cases${queryParams}`, { credentials: 'include' });
+    const res = await fetch(`${url}/api/cases/${queryParams}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener los casos');
     return res.json();
 }
@@ -286,7 +286,7 @@ export async function getCalendarEvents(start: string, end: string, url: string,
         params.append('case_id', String(caseId));
     }
 
-    const res = await fetch(`${url}/api/calendar-events?${params}`, { credentials: 'include' });
+    const res = await fetch(`${url}/api/calendar-events/?${params}`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener los eventos del calendario');
     return res.json();
 }
