@@ -182,7 +182,7 @@ export default function RegisterPage() {
                                 htmlFor="terms"
                                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
                             >
-                                Al crear una cuenta, aceptas nuestros <Link href="#" className="text-primary hover:underline">Términos de Servicio</Link> y <Link href="#" className="text-primary hover:underline">Política de Privacidad</Link>.
+                                Al crear una cuenta, aceptas nuestros <Link href="/terms" className="text-primary hover:underline">Términos de Servicio</Link> y <Link href="/privacy" className="text-primary hover:underline">Política de Privacidad</Link>.
                             </label>
                         </div>
 

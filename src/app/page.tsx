@@ -204,7 +204,8 @@ export default function LandingPage() {
                             </div>
                             <h3 className="text-base font-semibold leading-7 text-white">Solo</h3>
                             <p className="mt-4 flex items-baseline gap-x-2">
-                                <span className="text-5xl font-bold tracking-tight text-white">Contacto</span>
+                                <span className="text-5xl font-bold tracking-tight text-white">$400</span>
+                                <span className="text-base text-white/80">MXN/mes</span>
                             </p>
                             <p className="mt-6 text-base leading-7 text-white/80">Para abogados independientes y pequeños despachos</p>
                             <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-white/90">
@@ -271,8 +272,8 @@ export default function LandingPage() {
                                     <ul role="list" className="mt-6 space-y-4">
                                         <li><Link href="#about" className="text-sm leading-6 text-gray-300 hover:text-white">Acerca de</Link></li>
                                         <li><Link href="#" className="text-sm leading-6 text-gray-300 hover:text-white">Carreras</Link></li>
-                                        <li><Link href="#" className="text-sm leading-6 text-gray-300 hover:text-white">Política de Privacidad</Link></li>
-                                        <li><Link href="#" className="text-sm leading-6 text-gray-300 hover:text-white">Términos de Servicio</Link></li>
+                                        <li><Link href="/privacy" className="text-sm leading-6 text-gray-300 hover:text-white">Política de Privacidad</Link></li>
+                                        <li><Link href="/terms" className="text-sm leading-6 text-gray-300 hover:text-white">Términos de Servicio</Link></li>
                                     </ul>
                                 </div>
                             </div>

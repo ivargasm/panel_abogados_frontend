@@ -188,7 +188,7 @@ function SubscriptionContent() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Star className="text-yellow-400" /> Plan Profesional</CardTitle>
                         <CardDescription>Desbloquea todo el potencial de LexControl sin límites.</CardDescription>
-                        <p className="text-3xl font-bold mt-2">$200 <span className="text-lg font-normal text-muted-foreground">/ mes</span></p>
+                        <p className="text-3xl font-bold mt-2">$400 <span className="text-lg font-normal text-muted-foreground">MXN / mes</span></p>
                     </CardHeader>
                     <CardContent>
                         <ul className="space-y-3">
