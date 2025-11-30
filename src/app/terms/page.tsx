@@ -25,7 +25,7 @@ export default function TermsPage() {
                     <section className="mb-12">
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Aceptación de los Términos</h2>
                         <p className="text-gray-700 leading-relaxed">
-                            Al acceder y utilizar LexControl ("el Servicio"), usted acepta estar sujeto a estos Términos y Condiciones de Servicio. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestro servicio.
+                            Al acceder y utilizar LexControl (&quot;el Servicio&quot;), usted acepta estar sujeto a estos Términos y Condiciones de Servicio. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestro servicio.
                         </p>
                     </section>
 
@@ -102,7 +102,7 @@ export default function TermsPage() {
                     <section className="mb-12">
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Limitación de Responsabilidad</h2>
                         <p className="text-gray-700 leading-relaxed">
-                            LexControl se proporciona "tal cual" sin garantías de ningún tipo. No seremos responsables de daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el servicio.
+                            LexControl se proporciona &quot;tal cual&quot; sin garantías de ningún tipo. No seremos responsables de daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el servicio.
                         </p>
                     </section>
 

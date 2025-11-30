@@ -155,7 +155,7 @@ export default function PrivacyPage() {
                     <section className="mb-12">
                         <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Cambios a esta Política</h2>
                         <p className="text-gray-700 leading-relaxed">
-                            Podemos actualizar esta Política de Privacidad periódicamente. Le notificaremos sobre cambios significativos publicando la nueva política en esta página y actualizando la fecha de "Última actualización". Le recomendamos revisar esta política periódicamente.
+                            Podemos actualizar esta Política de Privacidad periódicamente. Le notificaremos sobre cambios significativos publicando la nueva política en esta página y actualizando la fecha de &quot;Última actualización&quot;. Le recomendamos revisar esta política periódicamente.
                         </p>
                     </section>
 
