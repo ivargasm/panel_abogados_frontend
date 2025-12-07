@@ -454,7 +454,7 @@ export async function getBillingStats(url: string) {
 }
 
 export async function getInvoices(url: string): Promise<Invoice[]> {
-    const res = await fetch(`${url}/api/billing/invoices/`, { credentials: 'include' });
+    const res = await fetch(`${url}/api/billing/invoices`, { credentials: 'include' });
     if (!res.ok) throw new Error('Error al obtener las facturas');
     return res.json();
 }
