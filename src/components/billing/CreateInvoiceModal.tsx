@@ -58,7 +58,7 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
 
     const fetchCases = async (clientId: string) => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cases?client_id=${clientId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cases/?client_id=${clientId}`, {
                 credentials: 'include'
             });
             if (response.ok) {

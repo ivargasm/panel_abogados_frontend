@@ -59,7 +59,7 @@ export default function InvoiceList() {
 
     const fetchInvoices = async (search = "") => {
         try {
-            const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices`);
+            const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/`);
             if (search) {
                 url.searchParams.append("search", search);
             }
