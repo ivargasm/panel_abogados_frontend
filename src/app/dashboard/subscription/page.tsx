@@ -65,7 +65,7 @@ function SubscriptionContent() {
 
     const fetchUsageStats = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/usage/`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/usage`, {
                 credentials: 'include'
             });
             if (response.ok) {
