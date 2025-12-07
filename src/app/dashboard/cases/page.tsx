@@ -291,7 +291,8 @@ export default function CasesPage() {
             }
         };
         fetchData();
-    }, [selectedCase, url]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url]);
 
     // Cargar detalles del caso seleccionado
     useEffect(() => {

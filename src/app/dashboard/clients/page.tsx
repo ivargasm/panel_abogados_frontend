@@ -188,7 +188,8 @@ export default function ClientsPage() {
             }
         };
         fetchClients();
-    }, [selectedClient, url]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [url]);
 
     // Cargar datos del cliente seleccionado
     useEffect(() => {
