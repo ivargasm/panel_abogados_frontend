@@ -44,7 +44,7 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
 
     const fetchClients = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clients`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/clients/`, {
                 credentials: 'include'
             });
             if (response.ok) {
@@ -99,7 +99,7 @@ export default function CreateInvoiceModal({ isOpen, onClose }: CreateInvoiceMod
 
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
