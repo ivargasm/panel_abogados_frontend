@@ -27,7 +27,7 @@ export default function AddItemModal({ invoiceId, isOpen, onClose }: AddItemModa
 
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/${invoiceId}/items/`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/${invoiceId}/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
