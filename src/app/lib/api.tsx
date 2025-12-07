@@ -496,7 +496,7 @@ export async function getDashboardStats(url: string) {
 }
 
 export async function getRecentActivity(url: string, limit: number = 10) {
-    const res = await fetch(`${url}/api/dashboard/recent-activity/?limit=${limit}`, {
+    const res = await fetch(`${url}/api/dashboard/recent-activity?limit=${limit}`, {
         credentials: 'include',
     });
     if (!res.ok) {
@@ -506,7 +506,7 @@ export async function getRecentActivity(url: string, limit: number = 10) {
 }
 
 export async function getUpcomingDeadlines(url: string, daysAhead: number = 30) {
-    const res = await fetch(`${url}/api/dashboard/upcoming-deadlines/?days_ahead=${daysAhead}`, {
+    const res = await fetch(`${url}/api/dashboard/upcoming-deadlines?days_ahead=${daysAhead}`, {
         credentials: 'include',
     });
     if (!res.ok) {
