@@ -462,7 +462,7 @@ function SubscriptionSection() {
         },
         {
             name: "Solo",
-            price: "$29",
+            price: "$400",
             period: "mes",
             features: ["1 usuario", "Casos ilimitados", "10 GB almacenamiento", "Soporte prioritario", "Reportes básicos"],
             current: user?.subscription_plan === "solo",
