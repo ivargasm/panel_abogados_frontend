@@ -115,7 +115,7 @@ export async function getClients(url: string) {
 }
 
 export async function createClient(clientData: unknown, url: string) {
-    const res = await fetch(`${url}/api/clients`, {
+    const res = await fetch(`${url}/api/clients/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -157,7 +157,7 @@ export async function getCases(url: string, clientId: number | null) {
 }
 
 export async function createCase(caseData: CaseData, url: string) {
-    const res = await fetch(`${url}/api/cases`, {
+    const res = await fetch(`${url}/api/cases/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -292,7 +292,7 @@ export async function getCalendarEvents(start: string, end: string, url: string,
 }
 
 export async function createCalendarEvent(eventData: CalendarEventData, url: string) {
-    const res = await fetch(`${url}/api/calendar-events`, {
+    const res = await fetch(`${url}/api/calendar-events/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -460,7 +460,7 @@ export async function getInvoices(url: string): Promise<Invoice[]> {
 }
 
 export async function createInvoice(invoiceData: InvoiceData, url: string) {
-    const res = await fetch(`${url}/api/billing/invoices`, {
+    const res = await fetch(`${url}/api/billing/invoices/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
