@@ -609,26 +609,25 @@ export default function CasesPage() {
                                                     <div className="space-y-6">
                                                         {/* Resumen del Caso */}
                                                         <div>
-                                                            <h3 className="text-lg font-semibold mb-4">Resumen del Caso</h3>
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                                            <div className="flex items-center justify-between mb-4">
+                                                                <h3 className="text-lg font-semibold">Resumen del Caso</h3>
+                                                                <Select value={selectedCase.status} onValueChange={handleStatusChange}>
+                                                                    <SelectTrigger className="max-w-xs">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="active">Activo</SelectItem>
+                                                                        <SelectItem value="discovery">Descubrimiento</SelectItem>
+                                                                        <SelectItem value="trial">Juicio</SelectItem>
+                                                                        <SelectItem value="on_hold">En Espera</SelectItem>
+                                                                        <SelectItem value="closed">Cerrado</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="flex flex-col gap-4 text-sm">
                                                                 <div>
                                                                     <p className="text-muted-foreground">Cliente</p>
                                                                     <p className="font-medium">{selectedCase.client.full_name}</p>
-                                                                </div>
-                                                                <div>
-                                                                    <p className="text-muted-foreground mb-1">Estado</p>
-                                                                    <Select value={selectedCase.status} onValueChange={handleStatusChange}>
-                                                                        <SelectTrigger className="max-w-xs">
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="active">Activo</SelectItem>
-                                                                            <SelectItem value="discovery">Descubrimiento</SelectItem>
-                                                                            <SelectItem value="trial">Juicio</SelectItem>
-                                                                            <SelectItem value="on_hold">En Espera</SelectItem>
-                                                                            <SelectItem value="closed">Cerrado</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-muted-foreground">Fecha de Apertura</p>
