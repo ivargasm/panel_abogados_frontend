@@ -32,7 +32,7 @@ import RecordPaymentModal from "./RecordPaymentModal";
 import Link from "next/link";
 import { Search, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { deleteInvoice, reassignInvoice, getCases } from "@/app/lib/api";
+import { deleteInvoice, reassignInvoice, getCases, getInvoices } from "@/app/lib/api";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -52,6 +52,11 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+
+interface Case {
+    id: number;
+    title: string;
+}
 
 interface Invoice {
     id: number;
@@ -78,26 +83,28 @@ export default function InvoiceList() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
     const [invoiceToReassign, setInvoiceToReassign] = useState<Invoice | null>(null);
-    const [cases, setCases] = useState<any[]>([]);
+    const [cases, setCases] = useState<Case[]>([]);
     const [selectedCaseId, setSelectedCaseId] = useState<string>("");
 
     const fetchInvoices = async (search = "") => {
         try {
-            const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices`);
-            if (search) {
-                url.searchParams.append("search", search);
-            }
-            // Note: Backend might not support status filtering yet, implementing UI for now
+            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const data = await getInvoices(url);
 
-            const response = await fetch(url.toString(), {
-                credentials: 'include',
-            });
-            if (response.ok) {
-                const data = await response.json();
+            // Filter locally by search term if provided
+            if (search) {
+                const filtered = data.filter((invoice: Invoice) =>
+                    invoice.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
+                    invoice.client?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+                    invoice.case?.title?.toLowerCase().includes(search.toLowerCase())
+                );
+                setInvoices(filtered);
+            } else {
                 setInvoices(data);
             }
         } catch (error) {
             console.error("Error fetching invoices:", error);
+            toast.error("Error al cargar las facturas");
         }
     };
 
@@ -369,7 +376,7 @@ export default function InvoiceList() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="none">Sin caso asignado</SelectItem>
-                                    {cases.map((caseItem: any) => (
+                                    {cases.map((caseItem) => (
                                         <SelectItem key={caseItem.id} value={String(caseItem.id)}>
                                             {caseItem.title}
                                         </SelectItem>
