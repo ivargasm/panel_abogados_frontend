@@ -24,7 +24,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 // Importaciones de tu lógica de negocio
 import { useAuthStore } from '@/app/store/Store';
-import { getCases, createCase, getClients, updateCase, deleteCase, getCaseUpdates, getDocumentsForCase, createCaseUpdate } from '@/app/lib/api';
+import { getCases, createCase, getClients, updateCase, updateCaseStatus, deleteCase, getCaseUpdates, getDocumentsForCase, createCaseUpdate } from '@/app/lib/api';
 import ProtectedRoute from '@/app/components/ProtectedRoutes';
 import { CaseData, CaseUpdateData } from '@/app/types';
 import type { CaseUpdate, Document } from '@/app/types';
@@ -291,7 +291,7 @@ export default function CasesPage() {
             }
         };
         fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);
 
     // Cargar detalles del caso seleccionado
@@ -351,6 +351,18 @@ export default function CasesPage() {
         }
     };
 
+    const handleStatusChange = async (newStatus: string) => {
+        if (!selectedCase) return;
+        try {
+            const updated = await updateCaseStatus(selectedCase.id, newStatus, url);
+            setCases(prev => prev.map(c => c.id === selectedCase.id ? updated : c));
+            setSelectedCase(updated);
+            toast.success('Status actualizado');
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al actualizar el status');
+        }
+    };
+
     const handleDeleteCase = async (caseId: number) => {
         try {
             await deleteCase(caseId, url);
@@ -360,8 +372,9 @@ export default function CasesPage() {
                 setSelectedCase(newCases[0] || null);
             }
             toast.success("Caso eliminado");
-        } catch {
-            toast.error('No se pudo eliminar el caso');
+        } catch (err) {
+            // Mostrar el mensaje de error específico del backend
+            toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el caso');
         }
     };
 
@@ -603,10 +616,19 @@ export default function CasesPage() {
                                                                     <p className="font-medium">{selectedCase.client.full_name}</p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-muted-foreground">Estado</p>
-                                                                    <Badge variant={getStatusColor(selectedCase.status)}>
-                                                                        {selectedCase.status}
-                                                                    </Badge>
+                                                                    <p className="text-muted-foreground mb-1">Estado</p>
+                                                                    <Select value={selectedCase.status} onValueChange={handleStatusChange}>
+                                                                        <SelectTrigger className="max-w-xs">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="active">Activo</SelectItem>
+                                                                            <SelectItem value="discovery">Descubrimiento</SelectItem>
+                                                                            <SelectItem value="trial">Juicio</SelectItem>
+                                                                            <SelectItem value="on_hold">En Espera</SelectItem>
+                                                                            <SelectItem value="closed">Cerrado</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-muted-foreground">Fecha de Apertura</p>

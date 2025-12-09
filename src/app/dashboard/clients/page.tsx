@@ -188,7 +188,7 @@ export default function ClientsPage() {
             }
         };
         fetchClients();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [url]);
 
     // Cargar datos del cliente seleccionado
@@ -271,8 +271,8 @@ export default function ClientsPage() {
                 setSelectedClient(newClients[0] || null);
             }
             toast.success("Cliente eliminado");
-        } catch {
-            toast.error('No se pudo eliminar el cliente');
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'No se pudo eliminar el cliente');
         }
     };
 

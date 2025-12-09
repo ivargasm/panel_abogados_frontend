@@ -32,6 +32,26 @@ import RecordPaymentModal from "./RecordPaymentModal";
 import Link from "next/link";
 import { Search, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { deleteInvoice, reassignInvoice, getCases } from "@/app/lib/api";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface Invoice {
     id: number;
@@ -56,6 +76,10 @@ export default function InvoiceList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [statusFilter, setStatusFilter] = useState("all");
+    const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+    const [invoiceToReassign, setInvoiceToReassign] = useState<Invoice | null>(null);
+    const [cases, setCases] = useState<any[]>([]);
+    const [selectedCaseId, setSelectedCaseId] = useState<string>("");
 
     const fetchInvoices = async (search = "") => {
         try {
@@ -84,6 +108,48 @@ export default function InvoiceList() {
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm]);
+
+    const handleDeleteInvoice = async () => {
+        if (!invoiceToDelete) return;
+        try {
+            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            await deleteInvoice(invoiceToDelete.id, url);
+            toast.success("Factura eliminada exitosamente");
+            fetchInvoices(searchTerm);
+            setInvoiceToDelete(null);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al eliminar la factura');
+        }
+    };
+
+    const handleReassignInvoice = async () => {
+        if (!invoiceToReassign) return;
+        try {
+            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const caseId = selectedCaseId === "none" ? null : parseInt(selectedCaseId);
+            await reassignInvoice(invoiceToReassign.id, caseId, url);
+            toast.success("Factura reasignada exitosamente");
+            fetchInvoices(searchTerm);
+            setInvoiceToReassign(null);
+            setSelectedCaseId("");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : 'Error al reasignar la factura');
+        }
+    };
+
+    const openReassignModal = async (invoice: Invoice) => {
+        setInvoiceToReassign(invoice);
+        setSelectedCaseId(invoice.case?.title ? String(invoice.case) : "none");
+        // Fetch cases for the client
+        try {
+            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const clientCases = await getCases(url, invoice.client_id);
+            setCases(clientCases);
+        } catch (error) {
+            console.error("Error fetching cases:", error);
+            toast.error("Error al cargar los casos del cliente");
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -222,8 +288,14 @@ export default function InvoiceList() {
                                                 <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>
                                                     Registrar Pago
                                                 </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openReassignModal(invoice)}>
+                                                    Reasignar Caso
+                                                </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-red-600">
+                                                <DropdownMenuItem
+                                                    className="text-red-600"
+                                                    onClick={() => setInvoiceToDelete(invoice)}
+                                                >
                                                     Eliminar
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -262,6 +334,60 @@ export default function InvoiceList() {
                     }}
                 />
             )}
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!invoiceToDelete} onOpenChange={() => setInvoiceToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar factura?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará permanentemente la factura {invoiceToDelete?.invoice_number}.
+                            Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteInvoice} className="bg-red-600 hover:bg-red-700">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Reassign Dialog */}
+            <Dialog open={!!invoiceToReassign} onOpenChange={() => setInvoiceToReassign(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reasignar Factura a Otro Caso</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="case">Caso</Label>
+                            <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un caso..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Sin caso asignado</SelectItem>
+                                    {cases.map((caseItem: any) => (
+                                        <SelectItem key={caseItem.id} value={String(caseItem.id)}>
+                                            {caseItem.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setInvoiceToReassign(null)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleReassignInvoice}>
+                            Reasignar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

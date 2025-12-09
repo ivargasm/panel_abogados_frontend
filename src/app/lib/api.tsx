@@ -141,8 +141,13 @@ export async function deleteClient(clientId: number, url: string) {
         method: 'DELETE',
         credentials: 'include',
     });
-    if (!res.ok && res.status !== 204 && res.status === 409) {
-        throw new Error('Error al eliminar el cliente: El cliente tiene casos asociados');
+    if (!res.ok && res.status !== 204) {
+        // Si hay un error de validación (400), obtener el mensaje del backend
+        if (res.status === 400 || res.status === 409) {
+            const errorData = await res.json();
+            throw new Error(errorData.detail || 'Error al eliminar el cliente');
+        }
+        throw new Error('Error al eliminar el cliente');
     }
     return res;
 }
@@ -180,12 +185,28 @@ export async function updateCase(caseId: number, caseData: CaseData, url: string
     return res.json();
 }
 
+export async function updateCaseStatus(caseId: number, status: string, url: string) {
+    const res = await fetch(`${url}/api/cases/${caseId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Error al actualizar el status del caso');
+    return res.json();
+}
+
 export async function deleteCase(caseId: number, url: string) {
     const res = await fetch(`${url}/api/cases/${caseId}`, {
         method: 'DELETE',
         credentials: 'include',
     });
     if (!res.ok && res.status !== 204) {
+        // Si hay un error de validación (400), obtener el mensaje del backend
+        if (res.status === 400) {
+            const errorData = await res.json();
+            throw new Error(errorData.detail || 'Error al eliminar el caso');
+        }
         throw new Error('Error al eliminar el caso');
     }
     return res;
@@ -480,6 +501,36 @@ export async function recordPayment(invoiceId: number, paymentData: PaymentData,
     if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.detail || 'Error al registrar el pago');
+    }
+    return res.json();
+}
+
+export async function deleteInvoice(invoiceId: number, url: string) {
+    const res = await fetch(`${url}/api/billing/invoices/${invoiceId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+    });
+    if (!res.ok && res.status !== 204) {
+        // Si hay un error de validación (400), obtener el mensaje del backend
+        if (res.status === 400) {
+            const errorData = await res.json();
+            throw new Error(errorData.detail || 'Error al eliminar la factura');
+        }
+        throw new Error('Error al eliminar la factura');
+    }
+    return res;
+}
+
+export async function reassignInvoice(invoiceId: number, caseId: number | null, url: string) {
+    const res = await fetch(`${url}/api/billing/invoices/${invoiceId}/reassign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ case_id: caseId }),
+    });
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Error al reasignar la factura');
     }
     return res.json();
 }
