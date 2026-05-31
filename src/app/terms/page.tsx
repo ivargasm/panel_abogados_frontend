@@ -14,127 +14,147 @@ export default function TermsPage() {
                 </Link>
 
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-8">
-                    Términos y Condiciones de Servicio
+                    TÉRMINOS Y CONDICIONES DE USO DE LEXCONTROL
                 </h1>
 
-                <div className="prose prose-lg max-w-none">
+                <div className="prose prose-lg max-w-none text-gray-700">
                     <p className="text-gray-600 text-lg mb-8">
-                        Última actualización: {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        Última actualización: 02 de febrero de 2026
                     </p>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Aceptación de los Términos</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Al acceder y utilizar LexControl (&quot;el Servicio&quot;), usted acepta estar sujeto a estos Términos y Condiciones de Servicio. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestro servicio.
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">1. ACEPTACIÓN DE LOS TÉRMINOS</h2>
+                        <p className="leading-relaxed">
+                            Al registrarse, acceder o utilizar los servicios de LexControl (en adelante, &quot;La Plataforma&quot;),
+                            usted (en adelante, &quot;El Usuario&quot;) acepta vincularse legalmente por estos Términos y
+                            Condiciones. Si no está de acuerdo, absténgase de usar el servicio.
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Descripción del Servicio</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            LexControl es una plataforma de gestión legal diseñada para abogados y despachos jurídicos que proporciona:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">2. DESCRIPCIÓN DEL SERVICIO</h2>
+                        <p className="leading-relaxed">
+                            La Plataforma es una herramienta de software como servicio (SaaS) que permite
+                            modernizar la práctica legal. Centraliza la gestión de expedientes y automatiza el
+                            seguimiento de plazos procesales. Su principal innovación es el &apos;Portal del Cliente&apos;, que
+                            ofrece transparencia en tiempo real sobre el estatus del caso y los balances financieros,
+                            eliminando la necesidad de correos constantes y fortaleciendo la confianza abogado-cliente.
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Gestión de casos y expedientes</li>
-                            <li>Administración de clientes</li>
-                            <li>Control de facturación</li>
-                            <li>Portal para clientes</li>
-                            <li>Almacenamiento seguro de documentos</li>
-                            <li>Calendario y recordatorios</li>
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. PROPIEDAD DE LOS DATOS Y LICENCIA</h2>
+                        <ul className="list-disc pl-6 space-y-4">
+                            <li>
+                                <strong>Licencia de Procesamiento:</strong> Al cargar archivos e información de expedientes, El
+                                Usuario otorga a La Plataforma una licencia mundial, no exclusiva y libre de regalías
+                                para alojar, indexar, encriptar, respaldar y visualizar dicho contenido únicamente con
+                                el propósito de prestar el servicio de gestión de casos y notificaciones (ej. mostrar el
+                                estatus en el Portal del Cliente, calcular fechas de plazos).
+                            </li>
+                            <li>
+                                <strong>Propiedad del Usuario:</strong> El Usuario conserva todos los derechos de propiedad
+                                intelectual sobre los archivos y datos que carga en La Plataforma (&quot;Contenido del
+                                Usuario&quot;).
+                            </li>
+                            <li>
+                                <strong>Garantía de Legalidad:</strong> El Usuario garantiza que posee los derechos necesarios
+                                sobre los datos cargados y que estos no infringen derechos de terceros ni leyes
+                                vigentes (ej. no subir bases de datos robadas o información sensible prohibida).
+                            </li>
                         </ul>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Registro y Cuenta de Usuario</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Para utilizar LexControl, debe:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">4. CONFIDENCIALIDAD Y DATOS DE TERCEROS</h2>
+                        <p className="leading-relaxed">
+                            LexControl reconoce la naturaleza sensible y privilegiada de la información gestionada por
+                            los Usuarios (Abogados/Firmas) en relación con sus clientes. Nos comprometemos a
+                            mantener la más estricta confidencialidad técnica sobre los expedientes y balances
+                            financieros alojados. El Usuario (Abogado) declara que cuenta con la legitimación y los
+                            avisos de privacidad necesarios para cargar en la plataforma la información de sus propios
+                            clientes. LexControl actúa meramente como proveedor de infraestructura tecnológica, sin
+                            tener derechos de propiedad sobre la información de los expedientes.
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Proporcionar información precisa y completa durante el registro</li>
-                            <li>Mantener la seguridad de su contraseña</li>
-                            <li>Notificarnos inmediatamente sobre cualquier uso no autorizado de su cuenta</li>
-                            <li>Ser responsable de todas las actividades que ocurran bajo su cuenta</li>
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">5. POLÍTICA DE RETENCIÓN DE DATOS Y TERMINACIÓN</h2>
+                        <p className="leading-relaxed mb-4">
+                            Debido a la naturaleza de gestión documental del servicio:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-4">
+                            <li>
+                                <strong>Almacenamiento Persistente:</strong> LexControl almacenará la información y archivos de
+                                los expedientes de manera indefinida mientras la suscripción del Usuario se
+                                mantenga activa y al corriente de pago.
+                            </li>
+                            <li>
+                                <strong>Terminación del Servicio:</strong> En caso de que el Usuario cancele su suscripción o esta
+                                expire por falta de pago, LexControl mantendrá la información disponible en modo
+                                &quot;solo lectura&quot; o para exportación por un periodo de gracia de 30 días naturales.
+                                Transcurrido este plazo, LexControl se reserva el derecho de eliminar
+                                permanentemente todos los datos asociados a la cuenta para liberar espacio en
+                                servidores, sin responsabilidad alguna por la pérdida de dicha información histórica.
+                            </li>
+                            <li>
+                                <strong>Backups:</strong> Aunque LexControl realiza copias de seguridad de sus servidores, es
+                                responsabilidad exclusiva del Usuario mantener sus propios respaldos locales de los
+                                documentos legales críticos.
+                            </li>
                         </ul>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Planes y Pagos</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            LexControl ofrece diferentes planes de suscripción:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">6. LIMITACIÓN DE RESPONSABILIDAD (Cláusula &quot;As Is&quot;)</h2>
+                        <p className="leading-relaxed mb-4">
+                            El servicio se ofrece &quot;tal cual&quot; y &quot;según disponibilidad&quot;. En la máxima medida permitida
+                            por la ley aplicable:
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li><strong>Plan Gratuito:</strong> Acceso limitado a funciones básicas</li>
-                            <li><strong>Plan Solo ($400 MXN/mes):</strong> Acceso completo para abogados independientes</li>
+                        <ul className="list-disc pl-6 space-y-4">
+                            <li>
+                                <strong>Cálculo de Plazos:</strong> Las alertas y cálculos de plazos procesales son herramientas de
+                                apoyo auxiliares. LexControl NO garantiza que las notificaciones sean infalibles ni
+                                asume responsabilidad por fallas técnicas en el envío de correos o alertas push.
+                            </li>
+                            <li>
+                                <strong>Responsabilidad Profesional:</strong> El Usuario (Abogado) reconoce que es el único
+                                responsable de verificar los términos judiciales y llevar su propia agenda legal.
+                                LexControl no será responsable por pérdidas de derechos procesales, multas, o
+                                daños derivados de la confianza exclusiva en las alertas automatizadas de la
+                                plataforma.
+                            </li>
+                            <li>
+                                <strong>Interrupciones:</strong> No garantizamos un uptime del 100%. No seremos responsables
+                                por daños indirectos derivados de interrupciones temporales del servicio (caídas del
+                                servidor).
+                            </li>
                         </ul>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            Los pagos se procesan de forma segura. Puede cancelar su suscripción en cualquier momento desde la configuración de su cuenta.
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">7. PROPIEDAD INTELECTUAL DE LA PLATAFORMA</h2>
+                        <p className="leading-relaxed">
+                            El código fuente, algoritmos, diseño de interfaz, logotipos y la estructura de la base de
+                            datos son propiedad exclusiva de LexControl. El Usuario no podrá realizar ingeniería
+                            inversa, descompilar o intentar extraer el código fuente.
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Uso Aceptable</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Usted se compromete a NO:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Utilizar el servicio para fines ilegales o no autorizados</li>
-                            <li>Violar leyes locales, estatales, nacionales o internacionales</li>
-                            <li>Transmitir virus, malware o código malicioso</li>
-                            <li>Intentar acceder sin autorización a otros sistemas o cuentas</li>
-                            <li>Interferir con el funcionamiento del servicio</li>
-                        </ul>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Propiedad Intelectual</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Todo el contenido, características y funcionalidad de LexControl son propiedad exclusiva de LexControl y están protegidos por leyes de derechos de autor, marcas registradas y otras leyes de propiedad intelectual.
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">8. MODIFICACIONES</h2>
+                        <p className="leading-relaxed">
+                            Nos reservamos el derecho de modificar estos términos en cualquier momento.
+                            Notificaremos cambios significativos a través del correo electrónico asociado a la cuenta.
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Privacidad y Protección de Datos</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Su privacidad es importante para nosotros. Consulte nuestra <Link href="/privacy" className="text-primary hover:underline">Política de Privacidad</Link> para obtener información sobre cómo recopilamos, usamos y protegemos sus datos personales.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Limitación de Responsabilidad</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            LexControl se proporciona &quot;tal cual&quot; sin garantías de ningún tipo. No seremos responsables de daños indirectos, incidentales, especiales o consecuentes que resulten del uso o la imposibilidad de usar el servicio.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Modificaciones del Servicio</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Nos reservamos el derecho de modificar o discontinuar el servicio en cualquier momento, con o sin previo aviso. No seremos responsables ante usted ni ante terceros por cualquier modificación, suspensión o discontinuación del servicio.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Terminación</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Podemos terminar o suspender su acceso al servicio inmediatamente, sin previo aviso, por cualquier motivo, incluyendo, sin limitación, si viola estos Términos y Condiciones.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Ley Aplicable</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Estos términos se regirán e interpretarán de acuerdo con las leyes de México, sin tener en cuenta sus disposiciones sobre conflictos de leyes.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Contacto</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Si tiene preguntas sobre estos Términos y Condiciones, puede contactarnos en:
-                        </p>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            <strong>Email:</strong> soporte@lexcontrol.com<br />
-                            <strong>Sitio web:</strong> www.lexcontrol.com
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. LEY APLICABLE Y JURISDICCIÓN</h2>
+                        <p className="leading-relaxed">
+                            Para la interpretación y cumplimiento de los presentes términos, las partes se someten a
+                            las leyes y tribunales competentes de la ciudad de Santiago de Querétaro, México,
+                            renunciando a cualquier otro fuero que pudiera corresponderles.
                         </p>
                     </section>
                 </div>

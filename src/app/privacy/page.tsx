@@ -14,159 +14,195 @@ export default function PrivacyPage() {
                 </Link>
 
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-8">
-                    Política de Privacidad
+                    AVISO DE PRIVACIDAD INTEGRAL
                 </h1>
 
-                <div className="prose prose-lg max-w-none">
+                <div className="prose prose-lg max-w-none text-gray-700">
                     <p className="text-gray-600 text-lg mb-8">
-                        Última actualización: {new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        Fecha de última actualización: 02 de Febrero de 2026.
                     </p>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introducción</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            En LexControl, nos comprometemos a proteger su privacidad y la seguridad de su información personal. Esta Política de Privacidad explica cómo recopilamos, usamos, divulgamos y protegemos su información cuando utiliza nuestro servicio.
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">1. IDENTIDAD Y DOMICILIO DEL RESPONSABLE</h2>
+                        <p className="leading-relaxed">
+                            LexControl (en adelante, &quot;El Responsable&quot;), con domicilio fiscal ubicado la ciudad de
+                            Santiago de Querétaro, Querétaro, México, es el responsable del uso y protección de sus
+                            datos personales, y al respecto le informa lo siguiente:
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Información que Recopilamos</h2>
-
-                        <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">2.1 Información que Usted Proporciona</h3>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li><strong>Información de registro:</strong> Nombre completo, dirección de correo electrónico, contraseña</li>
-                            <li><strong>Información de perfil:</strong> Número de teléfono, título profesional, foto de perfil</li>
-                            <li><strong>Información de clientes:</strong> Datos de clientes que usted ingresa en la plataforma</li>
-                            <li><strong>Información de casos:</strong> Detalles de casos, documentos, notas y actualizaciones</li>
-                            <li><strong>Información de facturación:</strong> Datos de facturación y pagos</li>
-                        </ul>
-
-                        <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">2.2 Información Recopilada Automáticamente</h3>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li><strong>Datos de uso:</strong> Páginas visitadas, funciones utilizadas, tiempo de uso</li>
-                            <li><strong>Información del dispositivo:</strong> Tipo de dispositivo, sistema operativo, navegador</li>
-                            <li><strong>Dirección IP:</strong> Para seguridad y análisis</li>
-                            <li><strong>Cookies:</strong> Para mejorar la experiencia del usuario</li>
-                        </ul>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Cómo Usamos su Información</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Utilizamos la información recopilada para:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">2. DATOS PERSONALES QUE RECABAMOS</h2>
+                        <p className="leading-relaxed mb-4">
+                            Para llevar a cabo las finalidades descritas en el presente Aviso de Privacidad, utilizaremos
+                            las siguientes categorías de datos personales:
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Proporcionar, mantener y mejorar nuestros servicios</li>
-                            <li>Procesar transacciones y enviar confirmaciones</li>
-                            <li>Enviar comunicaciones administrativas y actualizaciones del servicio</li>
-                            <li>Responder a sus comentarios, preguntas y solicitudes de soporte</li>
-                            <li>Monitorear y analizar tendencias, uso y actividades</li>
-                            <li>Detectar, prevenir y abordar problemas técnicos y de seguridad</li>
-                            <li>Cumplir con obligaciones legales</li>
-                        </ul>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Compartir su Información</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            No vendemos su información personal. Podemos compartir su información en las siguientes circunstancias:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li><strong>Con su consentimiento:</strong> Cuando usted nos autorice explícitamente</li>
-                            <li><strong>Proveedores de servicios:</strong> Con terceros que nos ayudan a operar nuestro servicio (hosting, procesamiento de pagos, análisis)</li>
-                            <li><strong>Cumplimiento legal:</strong> Cuando sea requerido por ley o para proteger nuestros derechos</li>
-                            <li><strong>Transferencias comerciales:</strong> En caso de fusión, adquisición o venta de activos</li>
+                        <ul className="list-disc pl-6 space-y-4 mb-4">
+                            <li><strong>Datos de Identificación:</strong> Nombre completo, nombre de usuario.</li>
+                            <li><strong>Datos de Contacto:</strong> Correo electrónico.</li>
+                            <li><strong>Datos Laborales:</strong> Puesto o empresa (opcional, si aplica para facturación).</li>
+                            <li>
+                                <strong>Datos Patrimoniales y Financieros:</strong> Información necesaria para el procesamiento
+                                de pagos.
+                                <ul className="list-disc pl-6 mt-2 space-y-2">
+                                    <li><em>Nota:</em> El Responsable NO almacena números completos de tarjetas de
+                                    crédito/débito ni códigos de seguridad (CVV). Estos son procesados
+                                    directamente por la pasarela de pagos (ver numeral 5). Nosotros solo
+                                    conservamos referencias (tokens), los últimos 4 dígitos de la tarjeta y el
+                                    historial de transacciones.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Tratamiento de Datos de Terceros (Clientes del Usuario):</strong> En los casos donde el
+                                Usuario (Abogado/Firma) aloje datos personales de sus propios clientes en la
+                                plataforma (ej. en el &quot;Portal del Cliente&quot;), LexControl funge únicamente como
+                                ENCARGADO del tratamiento en términos del artículo 10 de la LFPDPPP,
+                                limitándose a almacenar y procesar dicha información siguiendo las instrucciones del
+                                Usuario. El Usuario (Abogado) mantiene la calidad de RESPONSABLE frente a los
+                                titulares de dichos datos.
+                            </li>
+                            <li>
+                                <strong>Sobre los Archivos Cargados (Data Files):</strong> La información contenida dentro de los
+                                archivos (CSV, Excel, JSON, PDF, JPG, PNG, ...) que usted carga a la plataforma para su
+                                procesamiento (&quot;Contenido del Usuario&quot;) no se considera dato personal recabado por El
+                                Responsable para fines de propiedad, sino información confiada temporalmente para la
+                                prestación del servicio de cómputo. Usted mantiene la titularidad y responsabilidad legal
+                                sobre el contenido de dichos archivos.
+                            </li>
                         </ul>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Seguridad de los Datos</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Implementamos medidas de seguridad técnicas y organizativas para proteger su información:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">3. DATOS SENSIBLES</h2>
+                        <p className="leading-relaxed">
+                            El Responsable NO solicita datos personales sensibles (como origen racial, salud,
+                            creencias religiosas, afiliación política, etc.) para el uso de la plataforma. Se advierte al
+                            Usuario que no debe cargar archivos que contengan datos sensibles de terceros sin
+                            contar con las debidas medidas de seguridad, encriptación y consentimientos legales
+                            previos. El Usuario asume total responsabilidad si incumple esta disposición.
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Cifrado de datos en tránsito y en reposo (SSL/TLS)</li>
-                            <li>Autenticación segura y gestión de contraseñas</li>
-                            <li>Controles de acceso estrictos</li>
-                            <li>Monitoreo continuo de seguridad</li>
-                            <li>Copias de seguridad regulares</li>
-                            <li>Auditorías de seguridad periódicas</li>
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">4. FINALIDADES DEL TRATAMIENTO</h2>
+                        <p className="leading-relaxed mb-4">
+                            Los datos personales que recabamos de usted los utilizaremos para las siguientes
+                            finalidades:
+                        </p>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3">A. Finalidades Primarias (Necesarias para el servicio):</h3>
+                        <ol className="list-decimal pl-6 space-y-2 mb-6">
+                            <li>Verificar y confirmar su identidad para crear su cuenta de usuario.</li>
+                            <li>Proveer los servicios de alojamiento de expedientes, gestión de flujo de trabajo
+                            legal y automatización de notificaciones (SaaS).</li>
+                            <li>Habilitar el &quot;Portal del Cliente&quot; para la visualización restringida de estatus procesal.</li>
+                            <li>Procesar los pagos y la facturación de las suscripciones correspondientes.</li>
+                            <li>Garantizar la seguridad de la información y prevenir fraudes.</li>
+                            <li>Atender solicitudes de soporte técnico y aclaraciones.</li>
+                        </ol>
+
+                        <h3 className="text-xl font-semibold text-gray-900 mb-3">B. Finalidades Secundarias (Opcionales):</h3>
+                        <ol className="list-decimal pl-6 space-y-2 mb-4">
+                            <li>Envío de boletines informativos, actualizaciones del sistema o promociones.</li>
+                            <li>Análisis estadístico anonimizado para mejorar nuestros algoritmos de
+                            recomendación.</li>
+                        </ol>
+                        <p className="leading-relaxed mt-4">
+                            En caso de que no desee que sus datos personales sean tratados para estos fines
+                            secundarios, usted puede presentar desde este momento un escrito vía correo electrónico a
+                            contacto@lexcontrol.com.mx.
+                        </p>
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">5. TRANSFERENCIAS DE DATOS Y PROCESAMIENTO DE PAGOS</h2>
+                        <p className="leading-relaxed mb-4">
+                            Sus datos personales pueden ser transferidos y tratados dentro y fuera del país por
+                            personas distintas a El Responsable. En ese sentido, su información puede ser compartida
+                            con:
+                        </p>
+                        <ol className="list-decimal pl-6 space-y-4">
+                            <li><strong>Autoridades competentes:</strong> En los casos legalmente previstos por la Ley.</li>
+                            <li><strong>Proveedores de Infraestructura:</strong> Servicios de alojamiento en la nube (como Vercel,
+                            AWS o Google Cloud) necesarios para la operación técnica de la plataforma.</li>
+                            <li>
+                                <strong>Stripe, Inc. (Pasarela de Pagos):</strong> Le informamos que, para procesar los pagos
+                                dentro de la plataforma, utilizamos los servicios de Stripe. De conformidad con el
+                                artículo 36, fracción IV y VII de la LFPDPPP, sus datos financieros son transferidos a
+                                Stripe bajo las siguientes condiciones:
+                                <ul className="list-disc pl-6 mt-2 space-y-2">
+                                    <li>El Responsable NO tiene acceso a su número completo de tarjeta ni CVV.
+                                    Esta información viaja encriptada directamente a los servidores de Stripe.</li>
+                                    <li>Únicamente compartimos los metadatos necesarios para vincular el pago con
+                                    su cuenta (ID de cliente, monto).</li>
+                                    <li>Al realizar un pago, usted consiente expresamente esta transferencia por ser
+                                    indispensable para el cumplimiento del contrato de servicios.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">6. SEGURIDAD Y ALMACENAMIENTO DE LA INFORMACIÓN</h2>
+                        <p className="leading-relaxed mb-4">
+                            Para proteger la confidencialidad de los expedientes:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-4">
+                            <li><strong>Encriptación:</strong> Los datos se transmiten (SSL/TLS) y se almacenan en reposo
+                            (Encryption at Rest) utilizando estándares de la industria.</li>
+                            <li><strong>Aislamiento Lógico:</strong> La arquitectura de la base de datos está diseñada para
+                            asegurar que la información de un despacho no sea accesible por otros usuarios de
+                            la plataforma.</li>
+                            <li><strong>Temporalidad:</strong> La información se conserva en nuestros servidores mientras la
+                            relación contractual (suscripción) permanezca vigente. Tras la cancelación de la
+                            cuenta, se aplicarán las políticas de eliminación segura descritas en los Términos y
+                            Condiciones (periodo de gracia de 30 días y posterior borrado definitivo).</li>
                         </ul>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            Sin embargo, ningún método de transmisión por Internet o almacenamiento electrónico es 100% seguro. No podemos garantizar la seguridad absoluta de su información.
+                    </section>
+
+                    <section className="mb-12">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">7. DERECHOS ARCO</h2>
+                        <p className="leading-relaxed mb-4">
+                            Usted tiene derecho a conocer qué datos personales tenemos de usted, para qué los
+                            utilizamos y las condiciones del uso que les damos (Acceso). Asimismo, es su derecho
+                            solicitar la corrección de su información personal en caso de que esté desactualizada, sea
+                            inexacta o incompleta (Rectificación); que la eliminemos de nuestros registros o bases de
+                            datos cuando considere que la misma no está siendo utilizada adecuadamente
+                            (Cancelación); así como oponerse al uso de sus datos personales para fines específicos
+                            (Oposición).
+                        </p>
+                        <p className="leading-relaxed">
+                            Para ejercer cualquiera de los derechos ARCO, deberá presentar la solicitud respectiva a
+                            través del correo electrónico: contacto@lexcontrol.com.mx.
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Retención de Datos</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Conservamos su información personal durante el tiempo que su cuenta esté activa o según sea necesario para proporcionarle servicios. También conservamos y utilizamos su información según sea necesario para cumplir con nuestras obligaciones legales, resolver disputas y hacer cumplir nuestros acuerdos.
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">8. USO DE COOKIES Y TECNOLOGÍAS DE RASTREO</h2>
+                        <p className="leading-relaxed mb-4">
+                            Le informamos que en nuestra página de Internet utilizamos cookies, web beacons y otras
+                            tecnologías a través de las cuales es posible monitorear su comportamiento como usuario
+                            de Internet, con el fin de brindarle un mejor servicio y experiencia de usuario al navegar en
+                            nuestra página (ej. mantener su sesión iniciada, recordar su preferencia de modo
+                            oscuro/claro).
+                        </p>
+                        <p className="leading-relaxed mb-4">
+                            Los datos personales que obtenemos de estas tecnologías de rastreo son: identificadores,
+                            nombre de usuario y preferencias de visualización. Estas tecnologías pueden deshabilitarse
+                            en la configuración de su navegador.
                         </p>
                     </section>
 
                     <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Sus Derechos</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Usted tiene derecho a:
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. CAMBIOS AL AVISO DE PRIVACIDAD</h2>
+                        <p className="leading-relaxed mb-4">
+                            El presente aviso de privacidad puede sufrir modificaciones, cambios o actualizaciones
+                            derivadas de nuevos requerimientos legales; de nuestras propias necesidades por los
+                            productos o servicios que ofrecemos; de nuestras prácticas de privacidad; o de cambios en
+                            nuestro modelo de negocio.
                         </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li><strong>Acceso:</strong> Solicitar una copia de su información personal</li>
-                            <li><strong>Rectificación:</strong> Corregir información inexacta o incompleta</li>
-                            <li><strong>Eliminación:</strong> Solicitar la eliminación de su información personal</li>
-                            <li><strong>Portabilidad:</strong> Recibir sus datos en un formato estructurado</li>
-                            <li><strong>Oposición:</strong> Oponerse al procesamiento de su información</li>
-                            <li><strong>Restricción:</strong> Solicitar la limitación del procesamiento</li>
-                        </ul>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            Para ejercer estos derechos, contáctenos en soporte@lexcontrol.com
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Cookies y Tecnologías Similares</h2>
-                        <p className="text-gray-700 leading-relaxed mb-4">
-                            Utilizamos cookies y tecnologías similares para:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                            <li>Mantener su sesión activa</li>
-                            <li>Recordar sus preferencias</li>
-                            <li>Analizar el uso del servicio</li>
-                            <li>Mejorar la seguridad</li>
-                        </ul>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            Puede configurar su navegador para rechazar cookies, pero esto puede afectar la funcionalidad del servicio.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Privacidad de Menores</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Nuestro servicio no está dirigido a menores de 18 años. No recopilamos intencionalmente información personal de menores. Si descubrimos que hemos recopilado información de un menor, tomaremos medidas para eliminarla.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Transferencias Internacionales</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Su información puede ser transferida y mantenida en servidores ubicados fuera de su país de residencia. Tomamos medidas para garantizar que su información reciba un nivel adecuado de protección.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Cambios a esta Política</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Podemos actualizar esta Política de Privacidad periódicamente. Le notificaremos sobre cambios significativos publicando la nueva política en esta página y actualizando la fecha de &quot;Última actualización&quot;. Le recomendamos revisar esta política periódicamente.
-                        </p>
-                    </section>
-
-                    <section className="mb-12">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">12. Contacto</h2>
-                        <p className="text-gray-700 leading-relaxed">
-                            Si tiene preguntas sobre esta Política de Privacidad o sobre cómo manejamos su información personal, puede contactarnos en:
-                        </p>
-                        <p className="text-gray-700 leading-relaxed mt-4">
-                            <strong>Email:</strong> soporte@lexcontrol.com<br />
-                            <strong>Sitio web:</strong> www.lexcontrol.com
+                        <p className="leading-relaxed">
+                            Nos comprometemos a mantenerlo informado sobre los cambios que pueda sufrir el
+                            presente aviso de privacidad a través de: NOTIFICACIÓN EN EL DASHBOARD.
                         </p>
                     </section>
                 </div>
