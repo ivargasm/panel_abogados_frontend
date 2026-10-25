@@ -22,6 +22,7 @@ import {
     Download,
     AlertTriangle,
     Eye,
+    Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -81,7 +82,11 @@ import {
 
 type ClientRecord = {
     id: number;
+    client_type?: "FISICA" | "MORAL";
     full_name: string;
+    business_name?: string | null;
+    trade_name?: string | null;
+    representative_name?: string | null;
     email: string | null;
     phone_number: string | null;
     address: string | null;
@@ -101,8 +106,24 @@ function ClientForm({
     onSave: (clientData: Omit<ClientRecord, "id">) => Promise<void>;
     onFinish: () => void;
 }) {
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        client_type: "FISICA" | "MORAL";
+        full_name: string;
+        business_name: string;
+        trade_name: string;
+        representative_name: string;
+        email: string;
+        phone_number: string;
+        address: string;
+        rfc: string;
+        notes: string;
+        can_view_billing: boolean;
+    }>({
+        client_type: "FISICA",
         full_name: "",
+        business_name: "",
+        trade_name: "",
+        representative_name: "",
         email: "",
         phone_number: "",
         address: "",
@@ -116,7 +137,11 @@ function ClientForm({
     useEffect(() => {
         if (client) {
             setFormData({
+                client_type: client.client_type === "MORAL" ? "MORAL" : "FISICA",
                 full_name: client.full_name || "",
+                business_name: client.business_name || "",
+                trade_name: client.trade_name || "",
+                representative_name: client.representative_name || "",
                 email: client.email || "",
                 phone_number: client.phone_number || "",
                 address: client.address || "",
@@ -126,7 +151,11 @@ function ClientForm({
             });
         } else {
             setFormData({
+                client_type: "FISICA",
                 full_name: "",
+                business_name: "",
+                trade_name: "",
+                representative_name: "",
                 email: "",
                 phone_number: "",
                 address: "",
@@ -138,21 +167,28 @@ function ClientForm({
     }, [client]);
 
     useEffect(() => {
-        const name = formData.full_name.trim();
-        if (name.length < 3) {
+        const queryTerm =
+            formData.client_type === "MORAL"
+                ? (formData.business_name.trim() || formData.representative_name.trim() || formData.full_name.trim())
+                : formData.full_name.trim();
+
+        const queryRfc = formData.rfc.trim().toUpperCase();
+
+        if (queryTerm.length < 3 && queryRfc.length < 4) {
             setConflictResult(null);
             return;
         }
+
         const timer = setTimeout(async () => {
             const res = await checkConflictOfInterest(
-                name,
-                { excludeClientId: client?.id },
+                queryTerm || queryRfc,
+                { rfc: queryRfc || undefined, excludeClientId: client?.id },
                 API_URL
             );
             setConflictResult(res);
         }, 350);
         return () => clearTimeout(timer);
-    }, [formData.full_name, client?.id]);
+    }, [formData.full_name, formData.business_name, formData.representative_name, formData.rfc, formData.client_type, client?.id]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -163,8 +199,17 @@ function ClientForm({
         e.preventDefault();
         setSaving(true);
         try {
+            const resolvedFullName =
+                formData.client_type === "MORAL"
+                    ? (formData.representative_name.trim() || formData.business_name.trim())
+                    : formData.full_name.trim();
+
             await onSave({
                 ...formData,
+                full_name: resolvedFullName,
+                business_name: formData.client_type === "MORAL" ? formData.business_name.trim() || null : null,
+                trade_name: formData.client_type === "MORAL" ? formData.trade_name.trim() || null : null,
+                representative_name: formData.client_type === "MORAL" ? formData.representative_name.trim() || null : null,
                 email: formData.email.trim() || null,
                 phone_number: formData.phone_number.trim() || null,
                 address: formData.address.trim() || null,
@@ -179,46 +224,155 @@ function ClientForm({
 
     return (
         <form onSubmit={handleSubmit} className="grid gap-4 py-2">
+            {/* Selector de Personalidad Jurídica */}
             <div className="grid gap-2">
-                <Label htmlFor="full_name">Nombre Completo o Razón Social *</Label>
-                <Input
-                    id="full_name"
-                    name="full_name"
-                    placeholder="Ej: María Elena Hernández Soto / Comercializadora del Bajío, S.A. de C.V."
-                    value={formData.full_name}
-                    onChange={handleInputChange}
-                    required
-                />
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Personalidad Jurídica (Derecho Civil y Mercantil Mexicano) *
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, client_type: "FISICA" }))}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                            formData.client_type === "FISICA"
+                                ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                                : "border-border hover:bg-muted/50 text-muted-foreground"
+                        }`}
+                    >
+                        <UserIcon className="h-5 w-5 shrink-0" />
+                        <div>
+                            <div className="text-sm font-medium leading-none text-foreground">Persona Física</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">Sujeto individual (Nombre y Apellidos)</div>
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, client_type: "MORAL" }))}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                            formData.client_type === "MORAL"
+                                ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                                : "border-border hover:bg-muted/50 text-muted-foreground"
+                        }`}
+                    >
+                        <Building2 className="h-5 w-5 shrink-0" />
+                        <div>
+                            <div className="text-sm font-medium leading-none text-foreground">Persona Moral</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">Sociedad / Empresa (Razón Social)</div>
+                        </div>
+                    </button>
+                </div>
             </div>
 
-            {conflictResult && conflictResult.opposing_party_matches.length > 0 && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-800 p-3 text-xs space-y-1">
-                    <div className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-300">
-                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                        Alerta Ética: Posible Conflicto de Interés
+            {formData.client_type === "FISICA" ? (
+                <div className="grid gap-2">
+                    <Label htmlFor="full_name">Nombre Completo del Cliente *</Label>
+                    <Input
+                        id="full_name"
+                        name="full_name"
+                        placeholder="Ej: Dra. María Elena Hernández Soto"
+                        value={formData.full_name}
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
+            ) : (
+                <div className="grid gap-3 p-3 rounded-lg bg-muted/40 border border-border/80">
+                    <div className="grid gap-2">
+                        <Label htmlFor="business_name">Razón o Denominación Social Oficial *</Label>
+                        <Input
+                            id="business_name"
+                            name="business_name"
+                            placeholder="Ej: Constructora Horizonte Metropolitano, S.A. de C.V."
+                            value={formData.business_name}
+                            onChange={handleInputChange}
+                            required
+                        />
+                        <span className="text-[11px] text-muted-foreground">
+                            Denominación conforme al Acta Constitutiva o Cédula de Identificación Fiscal SAT.
+                        </span>
                     </div>
-                    <p className="text-amber-800 dark:text-amber-200">
-                        Este nombre guarda coincidencia con una <strong>Contraparte</strong> en expedientes activos del despacho:
-                    </p>
-                    <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200">
-                        {conflictResult.opposing_party_matches.map((m) => (
-                            <li key={m.case_id}>
-                                Contraparte <strong>{m.opposing_party}</strong> en <em>{m.case_title}</em>
-                                {m.judicial_file_number ? ` (Exp. ${m.judicial_file_number})` : ""}
-                            </li>
-                        ))}
-                    </ul>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="representative_name">Representante Legal / Apoderado *</Label>
+                            <Input
+                                id="representative_name"
+                                name="representative_name"
+                                placeholder="Ej: Lic. Roberto González Méndez"
+                                value={formData.representative_name}
+                                onChange={handleInputChange}
+                                required
+                            />
+                            <span className="text-[11px] text-muted-foreground">
+                                Apoderado con facultades para pleitos y cobranzas.
+                            </span>
+                        </div>
+                        <div className="grid gap-1.5">
+                            <Label htmlFor="trade_name">Nombre Comercial / Marca (Opcional)</Label>
+                            <Input
+                                id="trade_name"
+                                name="trade_name"
+                                placeholder="Ej: Horizonte Homes"
+                                value={formData.trade_name}
+                                onChange={handleInputChange}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Alerta Deontológica de Conflicto de Interés */}
+            {conflictResult && conflictResult.has_conflict && (
+                <div className="rounded-md border border-amber-400 bg-amber-500/10 p-3 text-xs space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-amber-700 dark:text-amber-400">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        Alerta Ética Deontológica: Posible Conflicto de Interés Detectado
+                    </div>
+
+                    {conflictResult.opposing_party_matches.length > 0 && (
+                        <div>
+                            <p className="font-medium text-amber-800 dark:text-amber-300">
+                                Coincidencia con <strong>Contraparte procesal</strong> en expedientes activos:
+                            </p>
+                            <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
+                                {conflictResult.opposing_party_matches.map((m) => (
+                                    <li key={m.case_id}>
+                                        Contraparte <strong>{m.opposing_party}</strong> en <em>{m.case_title}</em>
+                                        {m.judicial_file_number ? ` (Exp. Judicial ${m.judicial_file_number})` : ""}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {conflictResult.client_matches.length > 0 && (
+                        <div>
+                            <p className="font-medium text-amber-800 dark:text-amber-300">
+                                Coincidencia con <strong>Cliente activo</strong> del despacho:
+                            </p>
+                            <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
+                                {conflictResult.client_matches.map((c) => (
+                                    <li key={c.client_id}>
+                                        <strong>{c.business_name || c.full_name}</strong>
+                                        {c.rfc ? ` (RFC: ${c.rfc})` : ""}
+                                        {c.match_reason ? ` — ${c.match_reason}` : ""}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label htmlFor="email">Correo Electrónico (Portal del Cliente)</Label>
+                    <Label htmlFor="email">Correo Institucional / Contacto</Label>
                     <Input
                         id="email"
                         name="email"
                         type="email"
-                        placeholder="cliente@correo.mx"
+                        placeholder="contacto@empresa.mx"
                         value={formData.email}
                         onChange={handleInputChange}
                     />
@@ -237,17 +391,20 @@ function ClientForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label htmlFor="rfc">RFC (Datos Fiscales)</Label>
+                    <Label htmlFor="rfc">
+                        RFC ({formData.client_type === "MORAL" ? "12 caracteres (Moral)" : "13 caracteres (Física)"})
+                    </Label>
                     <Input
                         id="rfc"
                         name="rfc"
-                        placeholder="HESM850412AB1"
+                        maxLength={formData.client_type === "MORAL" ? 12 : 13}
+                        placeholder={formData.client_type === "MORAL" ? "IDB160921KL8" : "HESM850412AB1"}
                         value={formData.rfc}
                         onChange={handleInputChange}
                     />
                 </div>
                 <div className="grid gap-2">
-                    <Label htmlFor="address">Domicilio Convencional / Oír y Recibir Notificaciones</Label>
+                    <Label htmlFor="address">Domicilio Procesal / Convencional</Label>
                     <Input
                         id="address"
                         name="address"
@@ -259,14 +416,14 @@ function ClientForm({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="notes">Antecedentes y Notas Confidenciales</Label>
+                <Label htmlFor="notes">Antecedentes Jurídicos y Notas Confidenciales</Label>
                 <Textarea
                     id="notes"
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
-                    placeholder="Observaciones relevantes sobre representación legal, poderes notariales o preferencias de contacto..."
-                    className="min-h-[90px]"
+                    placeholder="Observaciones relevantes sobre poderes notariales, facultades de pleitos y cobranzas, etc."
+                    className="min-h-[80px]"
                 />
             </div>
 
@@ -279,7 +436,7 @@ function ClientForm({
                     }
                 />
                 <Label htmlFor="can_view_billing" className="text-sm font-normal cursor-pointer">
-                    Permitir que el cliente consulte su Estado de Cuenta en el Portal del Cliente
+                    Habilitar consulta de Estado de Cuenta en el Portal del Cliente
                 </Label>
             </div>
 
@@ -475,14 +632,23 @@ export default function ClientsPage() {
                                         <div className="flex items-center gap-3">
                                             <Avatar>
                                                 <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                                                    {client.full_name.substring(0, 2).toUpperCase()}
+                                                    {client.client_type === "MORAL" ? (
+                                                        <Building2 className="h-4 w-4 text-primary" />
+                                                    ) : (
+                                                        client.full_name.substring(0, 2).toUpperCase()
+                                                    )}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-medium truncate">{client.full_name}</p>
-                                                <p className="text-xs text-muted-foreground truncate">
-                                                    {client.email || "Sin correo registrado"}
-                                                </p>
+                                                <p className="font-medium truncate">{client.business_name || client.full_name}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">
+                                                        {client.client_type === "MORAL" ? "Moral" : "Física"}
+                                                    </Badge>
+                                                    <p className="text-xs text-muted-foreground truncate">
+                                                        {client.rfc || client.email || "Sin correo"}
+                                                    </p>
+                                                </div>
                                             </div>
                                             <div className="lg:hidden">
                                                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -523,15 +689,32 @@ export default function ClientsPage() {
                                     </Button>
                                     <Avatar className="h-12 w-12 sm:h-14 sm:w-14">
                                         <AvatarFallback className="text-lg bg-primary/15 text-primary font-bold">
-                                            {selectedClient.full_name.substring(0, 2).toUpperCase()}
+                                            {selectedClient.client_type === "MORAL" ? (
+                                                <Building2 className="h-7 w-7 text-primary" />
+                                            ) : (
+                                                selectedClient.full_name.substring(0, 2).toUpperCase()
+                                            )}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="min-w-0 flex-1">
-                                        <h2 className="text-xl sm:text-2xl font-bold truncate">
-                                            {selectedClient.full_name}
-                                        </h2>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <h2 className="text-xl sm:text-2xl font-bold truncate">
+                                                {selectedClient.business_name || selectedClient.full_name}
+                                            </h2>
+                                            <Badge
+                                                variant={selectedClient.client_type === "MORAL" ? "default" : "secondary"}
+                                                className="text-xs"
+                                            >
+                                                {selectedClient.client_type === "MORAL" ? "Persona Moral" : "Persona Física"}
+                                            </Badge>
+                                        </div>
+                                        {selectedClient.client_type === "MORAL" && selectedClient.representative_name && (
+                                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mt-0.5">
+                                                Apoderado / Representante Legal: <strong>{selectedClient.representative_name}</strong>
+                                            </p>
+                                        )}
                                         <p className="text-sm text-muted-foreground truncate">
-                                            {selectedClient.email || "Sin correo electrónico"}
+                                            {selectedClient.email || "Sin correo electrónico"} {selectedClient.rfc ? `• RFC: ${selectedClient.rfc}` : ""}
                                         </p>
                                         <div className="flex flex-wrap gap-2 mt-2.5">
                                             <InvitationButton
@@ -607,11 +790,53 @@ export default function ClientsPage() {
                                                 <div className="grid gap-6">
                                                     <div>
                                                         <h3 className="text-base font-semibold mb-3">
-                                                            Datos de Localización e Identificación
+                                                            Datos de Personalidad Jurídica e Identificación
                                                         </h3>
                                                         <div className="grid gap-3 text-sm">
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                                                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
+                                                                    <UserIcon className="h-4 w-4" />
+                                                                    <span>Personalidad:</span>
+                                                                </div>
+                                                                <span className="font-medium">
+                                                                    {selectedClient.client_type === "MORAL"
+                                                                        ? "Persona Moral (Sociedad Mercantil / Civil)"
+                                                                        : "Persona Física (Sujeto Individual)"}
+                                                                </span>
+                                                            </div>
+                                                            {selectedClient.client_type === "MORAL" && (
+                                                                <>
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                        <div className="flex items-center gap-2 text-muted-foreground w-40">
+                                                                            <Building2 className="h-4 w-4" />
+                                                                            <span>Razón Social:</span>
+                                                                        </div>
+                                                                        <span className="font-semibold">
+                                                                            {selectedClient.business_name || selectedClient.full_name}
+                                                                        </span>
+                                                                    </div>
+                                                                    {selectedClient.representative_name && (
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                            <div className="flex items-center gap-2 text-muted-foreground w-40">
+                                                                                <Briefcase className="h-4 w-4" />
+                                                                                <span>Apoderado Legal:</span>
+                                                                            </div>
+                                                                            <span>{selectedClient.representative_name}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {selectedClient.trade_name && (
+                                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                            <div className="flex items-center gap-2 text-muted-foreground w-40">
+                                                                                <FileText className="h-4 w-4" />
+                                                                                <span>Nombre Comercial:</span>
+                                                                            </div>
+                                                                            <span>{selectedClient.trade_name}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
                                                                     <Mail className="h-4 w-4" />
                                                                     <span>Correo:</span>
                                                                 </div>
@@ -620,28 +845,28 @@ export default function ClientsPage() {
                                                                 </span>
                                                             </div>
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                                                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
                                                                     <Phone className="h-4 w-4" />
                                                                     <span>Teléfono:</span>
                                                                 </div>
                                                                 <span>{selectedClient.phone_number || "No registrado"}</span>
                                                             </div>
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                                                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
                                                                     <MapPin className="h-4 w-4" />
                                                                     <span>Domicilio:</span>
                                                                 </div>
                                                                 <span>{selectedClient.address || "No registrado"}</span>
                                                             </div>
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                                                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
                                                                     <UserIcon className="h-4 w-4" />
-                                                                    <span>RFC:</span>
+                                                                    <span>RFC SAT:</span>
                                                                 </div>
-                                                                <span>{selectedClient.rfc || "No registrado"}</span>
+                                                                <span className="font-mono font-medium">{selectedClient.rfc || "No registrado"}</span>
                                                             </div>
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                                                <div className="flex items-center gap-2 text-muted-foreground w-32">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
                                                                     <Eye className="h-4 w-4" />
                                                                     <span>Honorarios:</span>
                                                                 </div>

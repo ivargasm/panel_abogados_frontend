@@ -20,6 +20,12 @@ import type {
     PresignedURLResponse,
     TeamMember,
     ConflictCheckResult,
+    SessionStatusResponse,
+    TeamInvitation,
+    TeamInviteData,
+    TeamInviteValidation,
+    ReceiptUploadResponse,
+    CredentialUploadResponse,
 } from "@/app/types";
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
@@ -42,6 +48,27 @@ async function extractErrorMessage(res: Response, fallback: string): Promise<str
 export const fetchUser = async (url: string = API_URL) => {
     const res = await fetch(`${url}/auth/me`, { credentials: "include" });
     if (!res.ok) throw new Error("No autenticado");
+    return res.json();
+};
+
+export const getSessionStatus = async (url: string = API_URL): Promise<SessionStatusResponse> => {
+    try {
+        const res = await fetch(`${url}/auth/session-status`, { credentials: "include" });
+        if (!res.ok) return { authenticated: false, remaining_seconds: 0 };
+        return res.json();
+    } catch {
+        return { authenticated: false, remaining_seconds: 0 };
+    }
+};
+
+export const refreshSession = async (url: string = API_URL): Promise<{ message: string; expires_in: number }> => {
+    const res = await fetch(`${url}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "No se pudo renovar la sesión."));
+    }
     return res.json();
 };
 
@@ -208,6 +235,9 @@ export async function updateTeamMember(
         job_title?: string;
         phone_number?: string;
         professional_license?: string;
+        professional_license_file_path?: string;
+        professional_license_file_name?: string;
+        license_institution?: string;
         is_active?: boolean;
         new_password?: string;
     },
@@ -245,12 +275,100 @@ export async function updateWorkspaceName(name: string, url: string = API_URL): 
     return res.json();
 }
 
+export async function inviteTeamMember(
+    data: TeamInviteData,
+    url: string = API_URL
+): Promise<TeamInvitation> {
+    const res = await fetch(`${url}/api/team/invitations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al enviar la invitación al colaborador"));
+    return res.json();
+}
+
+export async function getTeamInvitations(url: string = API_URL): Promise<TeamInvitation[]> {
+    const res = await fetch(`${url}/api/team/invitations`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener las invitaciones pendientes"));
+    return res.json();
+}
+
+export async function resendTeamInvitation(invitationId: number, url: string = API_URL): Promise<TeamInvitation> {
+    const res = await fetch(`${url}/api/team/invitations/${invitationId}/resend`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al reenviar la invitación"));
+    return res.json();
+}
+
+export async function cancelTeamInvitation(invitationId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/team/invitations/${invitationId}`, {
+        method: "DELETE",
+        credentials: "include",
+    });
+    if (!res.ok && res.status !== 204) {
+        throw new Error(await extractErrorMessage(res, "Error al cancelar la invitación"));
+    }
+    return res;
+}
+
+export async function validateTeamInvitation(token: string, url: string = API_URL): Promise<TeamInviteValidation> {
+    const res = await fetch(`${url}/api/team/invitations/validate/${encodeURIComponent(token)}`);
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Enlace de invitación inválido o expirado"));
+    return res.json();
+}
+
+export async function acceptTeamInvitation(
+    token: string,
+    password: string,
+    url: string = API_URL
+): Promise<{ message: string; access_token: string; user?: unknown }> {
+    const res = await fetch(`${url}/api/team/invitations/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token, password }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al activar la cuenta de colaborador"));
+    return res.json();
+}
+
+export async function uploadAndParseCredential(file: File, url: string = API_URL): Promise<CredentialUploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${url}/api/team/credentials/upload-and-parse`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al procesar la Cédula Profesional"));
+    }
+    return res.json();
+}
+
+export async function getMemberCredentialUrl(memberId: number, url: string = API_URL): Promise<{ download_url: string; file_name: string }> {
+    const res = await fetch(`${url}/api/team/members/${memberId}/credential`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al obtener el enlace de la cédula"));
+    }
+    return res.json();
+}
+
 export async function checkConflictOfInterest(
     name: string,
-    options?: { excludeClientId?: number; excludeCaseId?: number },
+    options?: { rfc?: string; excludeClientId?: number; excludeCaseId?: number },
     url: string = API_URL
 ): Promise<ConflictCheckResult> {
     const params = new URLSearchParams({ name });
+    if (options?.rfc) params.set("rfc", options.rfc);
     if (options?.excludeClientId) params.set("exclude_client_id", String(options.excludeClientId));
     if (options?.excludeCaseId) params.set("exclude_case_id", String(options.excludeCaseId));
 
@@ -701,6 +819,30 @@ export async function recordPayment(invoiceId: number, paymentData: PaymentData,
     });
     if (!res.ok) {
         throw new Error(await extractErrorMessage(res, "Error al registrar el abono"));
+    }
+    return res.json();
+}
+
+export async function uploadAndParseReceipt(file: File, url: string = API_URL): Promise<ReceiptUploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${url}/api/billing/receipts/upload-and-parse`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al procesar el comprobante bancario"));
+    }
+    return res.json();
+}
+
+export async function getPaymentReceiptUrl(paymentId: number, url: string = API_URL): Promise<{ download_url: string; receipt_file_name: string }> {
+    const res = await fetch(`${url}/api/billing/payments/${paymentId}/receipt`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al obtener el enlace del comprobante"));
     }
     return res.json();
 }

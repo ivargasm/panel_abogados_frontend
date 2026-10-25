@@ -2,7 +2,11 @@
 // Definiciones centralizadas de tipos de TypeScript para LexControl.
 
 export type ClientData = {
+    client_type?: "FISICA" | "MORAL";
     full_name: string;
+    business_name?: string | null;
+    trade_name?: string | null;
+    representative_name?: string | null;
     email?: string | null;
     phone_number?: string | null;
     address?: string | null;
@@ -219,6 +223,10 @@ export type PaymentRecord = {
     payment_date: string;
     method: string;
     notes?: string | null;
+    tracking_key?: string | null;
+    issuing_bank?: string | null;
+    receipt_file_path?: string | null;
+    receipt_file_name?: string | null;
 };
 
 export type Invoice = {
@@ -235,6 +243,9 @@ export type Invoice = {
     client?: {
         id: number;
         full_name: string;
+        client_type?: string;
+        business_name?: string | null;
+        rfc?: string | null;
         email?: string | null;
     } | null;
     case?: {
@@ -258,7 +269,47 @@ export type InvoiceData = {
 export type PaymentData = {
     amount: number;
     method: string;
-    notes: string;
+    payment_date?: string | null;
+    notes?: string | null;
+    tracking_key?: string | null;
+    issuing_bank?: string | null;
+    receipt_file_path?: string | null;
+    receipt_file_name?: string | null;
+};
+
+export type ParsedReceiptData = {
+    amount?: number | null;
+    payment_date?: string | null;
+    tracking_key?: string | null;
+    issuing_bank?: string | null;
+    method: string;
+    suggested_notes: string;
+    confidence: number;
+    raw_text_snippet?: string | null;
+};
+
+export type ReceiptUploadResponse = {
+    receipt_file_path: string;
+    receipt_file_name: string;
+    download_url?: string | null;
+    extracted_data: ParsedReceiptData;
+};
+
+export type ParsedCredentialData = {
+    license_number?: string | null;
+    institution: string;
+    degree_title?: string | null;
+    holder_name?: string | null;
+    credential_type: "CEDULA_PROFESIONAL" | "CARTA_PASANTE";
+    confidence: number;
+    raw_text_snippet?: string | null;
+};
+
+export type CredentialUploadResponse = {
+    professional_license_file_path: string;
+    professional_license_file_name: string;
+    download_url?: string | null;
+    extracted_data: ParsedCredentialData;
 };
 
 export type PresignedURLResponse = {
@@ -275,6 +326,9 @@ export type TeamMember = {
     job_title?: string | null;
     phone_number?: string | null;
     professional_license?: string | null;
+    professional_license_file_path?: string | null;
+    professional_license_file_name?: string | null;
+    license_institution?: string | null;
     is_active: boolean;
     assigned_cases_count: number;
     created_at?: string | null;
@@ -284,8 +338,12 @@ export type ConflictCheckResult = {
     has_conflict: boolean;
     client_matches: {
         client_id: number;
+        client_type?: string;
         full_name: string;
+        business_name?: string | null;
+        representative_name?: string | null;
         rfc?: string | null;
+        match_reason?: string | null;
     }[];
     opposing_party_matches: {
         case_id: number;
@@ -293,5 +351,47 @@ export type ConflictCheckResult = {
         judicial_file_number?: string | null;
         opposing_party: string;
         client_name?: string | null;
+        match_reason?: string | null;
     }[];
+};
+
+export type SessionStatusResponse = {
+    authenticated: boolean;
+    remaining_seconds: number;
+    expires_at?: number | null;
+    user_email?: string | null;
+    role?: string | null;
+};
+
+export type TeamInvitation = {
+    id: number;
+    email: string;
+    full_name: string;
+    job_title?: string | null;
+    phone_number?: string | null;
+    professional_license?: string | null;
+    token?: string | null;
+    status: "sent" | "accepted" | "cancelled" | "expired";
+    expires_at: string;
+    created_at: string;
+};
+
+export type TeamInviteData = {
+    full_name: string;
+    email: string;
+    job_title?: string;
+    phone_number?: string;
+    professional_license?: string;
+    professional_license_file_path?: string;
+    professional_license_file_name?: string;
+    license_institution?: string;
+};
+
+export type TeamInviteValidation = {
+    valid: boolean;
+    email: string;
+    full_name: string;
+    job_title?: string | null;
+    professional_license?: string | null;
+    workspace_name: string;
 };

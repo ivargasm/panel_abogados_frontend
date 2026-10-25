@@ -19,6 +19,16 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
 
     const [showPassword, setShowPassword] = useState(false);
+    const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get("session_expired") === "true") {
+                setSessionExpiredNotice(true);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const validateAndRedirect = async () => {
@@ -105,6 +115,12 @@ export default function LoginPage() {
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-6">
+                        {sessionExpiredNotice && (
+                            <div className="p-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 rounded-md">
+                                Tu sesión ha expirado por inactividad. Por favor inicia sesión nuevamente.
+                            </div>
+                        )}
+
                         {error && (
                             <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
                                 {error}

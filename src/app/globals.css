@@ -113,69 +113,58 @@
 }
 
 .dark {
-  /* --- Paleta de Colores Temática para Despachos (Modo Oscuro) --- */
+  /* --- Paleta de Colores Ejecutiva "Midnight Slate / Navy" para Despachos Jurídicos --- */
 
-  /* Fondos y Superficies */
-  --background: #212730;
-  /* Azul muy oscuro, casi negro */
-  --foreground: #eeeeef;
-  /* Texto gris claro para el cuerpo */
+  /* Fondos y Superficies de Alta Sofisticación Forense */
+  --background: #0B0F19; /* Grafito azulado profundo, cero reflejos molestos */
+  --foreground: #F8FAFC; /* Blanco marfil descansado para lectura de autos y expedientes */
 
-  --card: #212730;
-  /* Azul oscuro para tarjetas */
-  --card-foreground: var(--foreground);
+  --card: #111827; /* Superficie con sutil elevación tonal */
+  --card-foreground: #F8FAFC;
 
-  --popover: oklch(0.15 0.03 258);
-  --popover-foreground: var(--foreground);
+  --popover: #151E2E; /* Popovers y modales con presencia ejecutiva */
+  --popover-foreground: #F8FAFC;
 
-  /* Color Primario (Azul Marino Corporativo) */
-  --primary: #0299e7;
-  /* Un azul más brillante para destacar en modo oscuro */
-  --primary-foreground: oklch(0.15 0.03 258);
-  /* Texto oscuro sobre el primario */
+  /* Color Primario (Azul Marino Ejecutivo / Real) */
+  --primary: #2563EB; /* Azul sobrio de alto prestigio */
+  --primary-foreground: #FFFFFF;
 
-  /* Color Secundario (Gris Oscuro) */
-  --secondary: #363b44;
-  --secondary-foreground: #eeeeef;
+  /* Color Secundario (Pizarra Media) */
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
 
-  /* Color Muted (Fondos sutiles) */
-  --muted: oklch(0.25 0.04 258);
-  --muted-foreground: oklch(0.65 0.03 240);
+  /* Color Muted (Fondos y Textos Sutiles para Abogados) */
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8; /* Gris pizarra legible sin cansar la vista */
 
-  /* Color de Acento (Dorado/Latón) */
-  --accent: oklch(0.25 0.04 258);
-  --accent-foreground: oklch(0.82 0.17 85);
-  /* Dorado más brillante para destacar */
+  /* Color de Acento (Dorado Forense / Latón Institucional) */
+  --accent: #1E293B;
+  --accent-foreground: #FBBF24; /* Ámbar dorado refinado */
 
-  /* Colores Funcionales */
-  --destructive: oklch(0.65 0.22 25);
-  --destructive-foreground: oklch(0.98 0.01 240);
-  --success: oklch(0.65 0.18 145);
-  --success-foreground: oklch(0.15 0.03 258);
-  --warning: oklch(0.75 0.18 85);
-  --warning-foreground: oklch(0.15 0.03 258);
+  /* Colores Funcionales Procesales */
+  --destructive: #EF4444; /* Carmesí puro para Términos Fatales e Improrrogables */
+  --destructive-foreground: #FFFFFF;
+  --success: #10B981; /* Esmeralda atenuado para Liquidado y En Término */
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B; /* Ámbar tenue para notas internas y advertencias éticas */
+  --warning-foreground: #0B0F19;
 
   /* Dashboard - Colores para Iconos de Actividad (Modo Oscuro) */
-  --dashboard-document: oklch(0.65 0.18 240);
-  /* Azul más brillante */
-  --dashboard-status: oklch(0.70 0.18 145);
-  /* Verde más brillante */
-  --dashboard-task: oklch(0.70 0.18 280);
-  /* Púrpura más brillante */
-  --dashboard-message: oklch(0.80 0.18 85);
-  /* Amarillo más brillante */
+  --dashboard-document: #38BDF8; /* Azul cielo sobrio */
+  --dashboard-status: #34D399; /* Esmeralda */
+  --dashboard-task: #A78BFA; /* Púrpura lavanda institucional */
+  --dashboard-message: #FBBF24; /* Ámbar */
 
-  /* Dashboard - Badges de Urgencia (Modo Oscuro) */
-  --badge-urgent: oklch(0.70 0.22 25);
-  --badge-urgent-foreground: oklch(0.98 0.01 240);
-  --badge-soon: oklch(0.80 0.18 85);
-  --badge-soon-foreground: oklch(0.15 0.03 258);
+  /* Dashboard - Badges de Urgencia Procesal */
+  --badge-urgent: #EF4444;
+  --badge-urgent-foreground: #FFFFFF;
+  --badge-soon: #F59E0B;
+  --badge-soon-foreground: #0B0F19;
 
-  /* Bordes y Anillos de Foco */
-  --border: oklch(0.31 0.05 258);
-  --input: oklch(0.31 0.05 258);
-  --ring: oklch(0.82 0.17 85);
-  /* Anillo de foco dorado */
+  /* Bordes Refinados y Anillos de Enfoque */
+  --border: #243247; /* Bordes nítidos y elegantes */
+  --input: #1F293D;
+  --ring: #3B82F6;
 }
 
 @layer base {
@@ -185,5 +174,61 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* =================================================================
+   Reglas de Impresión Forense (@media print) Estándar Carta
+   Evita rupturas horizontales en tablas de honorarios y expedientes
+   ================================================================= */
+@media print {
+  @page {
+    size: letter;
+    margin: 12mm 12mm 15mm 12mm;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Repetir encabezados y pies de tabla automáticamente en cada hoja */
+  thead {
+    display: table-header-group !important;
+  }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  /* Evitar cortes a la mitad en filas, tarjetas de datos, estados de cuenta y firmas */
+  tr,
+  .print-avoid-break,
+  .break-inside-avoid,
+  [data-print-avoid-break],
+  article,
+  .rounded-xl,
+  .border {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ocultar elementos de navegación y controles interactivos al imprimir */
+  nav,
+  aside,
+  header,
+  button,
+  .no-print,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Forzar que contenedores imprimibles ocupen todo el ancho sin scrolls */
+  .overflow-x-auto,
+  .overflow-y-auto,
+  .overflow-hidden {
+    overflow: visible !important;
   }
 }

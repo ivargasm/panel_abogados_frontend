@@ -39,6 +39,15 @@ import {
     Award,
     Sun,
     Moon,
+    Copy,
+    RotateCcw,
+    Trash2,
+    Clock,
+    FileText,
+    Upload,
+    Loader2,
+    X,
+    FileCheck,
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/Store";
 import { toast } from "sonner";
@@ -47,16 +56,21 @@ import {
     createCheckoutSession,
     createCustomerPortalSession,
     getTeamMembers,
-    createTeamMember,
     updateTeamMember,
     deactivateTeamMember,
     updateWorkspaceName,
+    inviteTeamMember,
+    getTeamInvitations,
+    resendTeamInvitation,
+    cancelTeamInvitation,
     updateUserProfile,
     changePassword,
     initiateProfilePictureUpload,
     uploadFileToS3,
+    uploadAndParseCredential,
+    getMemberCredentialUrl,
 } from "@/app/lib/api";
-import type { TeamMember } from "@/app/types";
+import type { TeamMember, TeamInvitation } from "@/app/types";
 
 type Section = "profile" | "team" | "general" | "security" | "subscription";
 
@@ -426,18 +440,23 @@ function TeamSection() {
     const { user } = useAuthStore();
     const isOwner = user?.role === "owner";
     const [members, setMembers] = useState<TeamMember[]>([]);
+    const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [extractingCedula, setExtractingCedula] = useState(false);
+    const [extractedCedulaMsg, setExtractedCedulaMsg] = useState<string | null>(null);
 
     const [createForm, setCreateForm] = useState({
         full_name: "",
         email: "",
-        password: "",
         job_title: "Abogado Asociado",
         professional_license: "",
+        professional_license_file_path: "",
+        professional_license_file_name: "",
+        license_institution: "",
         phone_number: "",
     });
 
@@ -445,69 +464,162 @@ function TeamSection() {
         full_name: "",
         job_title: "",
         professional_license: "",
+        professional_license_file_path: "",
+        professional_license_file_name: "",
+        license_institution: "",
         phone_number: "",
         new_password: "",
     });
+
+    const handleCredentialUpload = async (file: File, isEdit: boolean) => {
+        setExtractingCedula(true);
+        setExtractedCedulaMsg(null);
+        try {
+            const res = await uploadAndParseCredential(file, API_URL);
+            const { extracted_data, professional_license_file_path, professional_license_file_name } = res;
+            if (isEdit) {
+                setEditForm((prev) => ({
+                    ...prev,
+                    professional_license: extracted_data.license_number || prev.professional_license,
+                    license_institution: extracted_data.institution || prev.license_institution,
+                    professional_license_file_path,
+                    professional_license_file_name,
+                }));
+            } else {
+                setCreateForm((prev) => ({
+                    ...prev,
+                    professional_license: extracted_data.license_number || prev.professional_license,
+                    license_institution: extracted_data.institution || prev.license_institution,
+                    professional_license_file_path,
+                    professional_license_file_name,
+                }));
+            }
+            setExtractedCedulaMsg(
+                `Credencial analizada: No. Cédula ${extracted_data.license_number || "Pendiente"} (${extracted_data.institution}). Respaldo resguardado.`
+            );
+            toast.success("Cédula Profesional analizada y respaldada exitosamente");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al procesar la credencial");
+        } finally {
+            setExtractingCedula(false);
+        }
+    };
+
+    const handleViewCredential = async (memberId: number) => {
+        try {
+            const res = await getMemberCredentialUrl(memberId, API_URL);
+            if (res.download_url) {
+                window.open(res.download_url, "_blank");
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al abrir la credencial");
+        }
+    };
+
+    const loadInvitations = useCallback(async () => {
+        try {
+            const data = await getTeamInvitations(API_URL);
+            setInvitations(data);
+        } catch {
+            // Ignorar si no hay invitaciones o permisos
+        }
+    }, []);
 
     const loadMembers = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getTeamMembers(true, API_URL);
             setMembers(data);
+            await loadInvitations();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Error al cargar los integrantes del despacho");
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [loadInvitations]);
 
     useEffect(() => {
         loadMembers();
     }, [loadMembers]);
 
-    const handleCreateMember = async (e: React.FormEvent) => {
+    const handleInviteMember = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (createForm.password.length < 8) {
-            toast.error("La contraseña temporal debe tener al menos 8 caracteres");
-            return;
-        }
         setSubmitting(true);
         try {
-            await createTeamMember(
+            await inviteTeamMember(
                 {
                     full_name: createForm.full_name.trim(),
                     email: createForm.email.trim(),
-                    password: createForm.password,
                     job_title: createForm.job_title.trim() || undefined,
                     professional_license: createForm.professional_license.trim() || undefined,
+                    professional_license_file_path: createForm.professional_license_file_path || undefined,
+                    professional_license_file_name: createForm.professional_license_file_name || undefined,
+                    license_institution: createForm.license_institution.trim() || undefined,
                     phone_number: createForm.phone_number.trim() || undefined,
                 },
                 API_URL
             );
-            toast.success("Colaborador registrado en el despacho");
+            toast.success("Invitación enviada al correo del colaborador");
             setIsCreateOpen(false);
             setCreateForm({
                 full_name: "",
                 email: "",
-                password: "",
                 job_title: "Abogado Asociado",
                 professional_license: "",
+                professional_license_file_path: "",
+                professional_license_file_name: "",
+                license_institution: "",
                 phone_number: "",
             });
             loadMembers();
+            loadInvitations();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : "Error al registrar colaborador");
+            toast.error(err instanceof Error ? err.message : "Error al enviar la invitación");
         } finally {
             setSubmitting(false);
         }
     };
 
+    const handleCopyInviteLink = (invToken: string | null | undefined) => {
+        if (!invToken) {
+            toast.error("Token no disponible");
+            return;
+        }
+        const fullUrl = `${window.location.origin}/invitacion-colaborador?token=${invToken}`;
+        navigator.clipboard.writeText(fullUrl);
+        toast.success("Enlace de activación copiado al portapapeles");
+    };
+
+    const handleResendInvite = async (id: number) => {
+        try {
+            await resendTeamInvitation(id, API_URL);
+            toast.success("Invitación renovada por 7 días y reenviada");
+            loadInvitations();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al reenviar la invitación");
+        }
+    };
+
+    const handleCancelInvite = async (id: number) => {
+        try {
+            await cancelTeamInvitation(id, API_URL);
+            toast.success("Invitación cancelada correctamente");
+            loadInvitations();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al cancelar la invitación");
+        }
+    };
+
     const openEditModal = (member: TeamMember) => {
         setEditingMember(member);
+        setExtractedCedulaMsg(null);
         setEditForm({
             full_name: member.full_name || "",
             job_title: member.job_title || "",
             professional_license: member.professional_license || "",
+            professional_license_file_path: member.professional_license_file_path || "",
+            professional_license_file_name: member.professional_license_file_name || "",
+            license_institution: member.license_institution || "",
             phone_number: member.phone_number || "",
             new_password: "",
         });
@@ -528,6 +640,9 @@ function TeamSection() {
                     full_name: editForm.full_name.trim(),
                     job_title: editForm.job_title.trim() || undefined,
                     professional_license: editForm.professional_license.trim() || undefined,
+                    professional_license_file_path: editForm.professional_license_file_path || undefined,
+                    professional_license_file_name: editForm.professional_license_file_name || undefined,
+                    license_institution: editForm.license_institution.trim() || undefined,
                     phone_number: editForm.phone_number.trim() || undefined,
                     new_password: editForm.new_password || undefined,
                 },
@@ -621,9 +736,31 @@ function TeamSection() {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-sm">
-                                            {member.professional_license || (
-                                                <span className="text-muted-foreground italic text-xs">En trámite / N/A</span>
-                                            )}
+                                            <div className="space-y-1">
+                                                {member.professional_license ? (
+                                                    <div className="font-medium text-foreground">
+                                                        Cédula: {member.professional_license}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground italic text-xs">En trámite / N/A</span>
+                                                )}
+                                                {member.license_institution && (
+                                                    <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                                                        {member.license_institution}
+                                                    </div>
+                                                )}
+                                                {member.professional_license_file_path && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleViewCredential(member.id)}
+                                                        className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                    >
+                                                        <FileText className="h-3 w-3" /> Ver Credencial
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-center font-semibold">
                                             {member.assigned_cases_count}
@@ -675,16 +812,109 @@ function TeamSection() {
                 </CardContent>
             </Card>
 
-            {/* Modal Registrar Colaborador */}
+            {/* Invitaciones Pendientes de Colaboradores (Enfoque A) */}
+            {isOwner && invitations.length > 0 && (
+                <Card className="border-slate-200 dark:border-slate-800">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-amber-500" />
+                                    Invitaciones Pendientes de Activación
+                                </CardTitle>
+                                <CardDescription>
+                                    Colaboradores que aún no han definido su contraseña. Los enlaces tienen vigencia de 7 días.
+                                </CardDescription>
+                            </div>
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400">
+                                {invitations.length} pendiente{invitations.length > 1 ? "s" : ""}
+                            </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Colaborador</TableHead>
+                                    <TableHead>Correo</TableHead>
+                                    <TableHead>Cargo</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {invitations.map((inv) => {
+                                    const isExpired = inv.status === "expired" || new Date(inv.expires_at) <= new Date();
+                                    return (
+                                        <TableRow key={inv.id}>
+                                            <TableCell className="font-medium">{inv.full_name}</TableCell>
+                                            <TableCell className="font-mono text-xs">{inv.email}</TableCell>
+                                            <TableCell className="text-sm">{inv.job_title || "Abogado Asociado"}</TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={
+                                                        isExpired
+                                                            ? "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300"
+                                                            : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300"
+                                                    }
+                                                >
+                                                    {isExpired ? "Expirada" : "Pendiente"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {!isExpired && inv.token && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleCopyInviteLink(inv.token)}
+                                                            title="Copiar enlace de activación"
+                                                            className="text-xs h-8 px-2.5 cursor-pointer"
+                                                        >
+                                                            <Copy className="h-3.5 w-3.5 mr-1" />
+                                                            Copiar enlace
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleResendInvite(inv.id)}
+                                                        title="Reenviar y renovar por 7 días"
+                                                        className="h-8 px-2 cursor-pointer"
+                                                    >
+                                                        <RotateCcw className="h-3.5 w-3.5 text-blue-600" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleCancelInvite(inv.id)}
+                                                        title="Cancelar invitación"
+                                                        className="h-8 px-2 text-destructive hover:text-destructive cursor-pointer"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Modal Invitar Colaborador (Enfoque A: Sin contraseña manual) */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Registrar Abogado Colaborador o Pasante</DialogTitle>
+                        <DialogTitle>Invitar Abogado Colaborador o Pasante</DialogTitle>
                         <DialogDescription>
-                            Crea una cuenta de acceso para un integrante de tu despacho jurídico.
+                            Envía una invitación segura. El colaborador definirá su propia contraseña personal al activar su cuenta.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateMember} className="space-y-4">
+                    <form onSubmit={handleInviteMember} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="col-name">Nombre Completo *</Label>
                             <Input
@@ -703,17 +933,6 @@ function TeamSection() {
                                 placeholder="mariana.ortiz@despacho.mx"
                                 value={createForm.email}
                                 onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="col-pass">Contraseña Inicial *</Label>
-                            <Input
-                                id="col-pass"
-                                type="password"
-                                placeholder="Mínimo 8 caracteres"
-                                value={createForm.password}
-                                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
                                 required
                             />
                         </div>
@@ -739,6 +958,71 @@ function TeamSection() {
                                 />
                             </div>
                         </div>
+
+                        {/* Dropzone Cédula / Carta de Pasante */}
+                        <div className="space-y-1.5 p-3 rounded-lg border border-dashed border-border text-center bg-muted/20">
+                            <Label className="text-xs font-semibold text-muted-foreground block text-left">
+                                Respaldo Digital de Cédula Profesional DGP / Carta de Pasante
+                            </Label>
+                            <input
+                                type="file"
+                                id="col_cred_file_create"
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleCredentialUpload(f, false);
+                                }}
+                                className="hidden"
+                                disabled={extractingCedula}
+                            />
+                            {extractingCedula ? (
+                                <div className="flex items-center justify-center gap-2 py-2 text-xs text-primary font-medium">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Extrayendo número de cédula e institución educativa...</span>
+                                </div>
+                            ) : createForm.professional_license_file_name ? (
+                                <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-800 text-xs text-left">
+                                    <div className="flex items-center gap-1.5 truncate">
+                                        <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                                        <span className="truncate">{createForm.professional_license_file_name}</span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() =>
+                                            setCreateForm((prev) => ({
+                                                ...prev,
+                                                professional_license_file_path: "",
+                                                professional_license_file_name: "",
+                                            }))
+                                        }
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <label
+                                    htmlFor="col_cred_file_create"
+                                    className="cursor-pointer flex flex-col items-center py-1.5 space-y-1"
+                                >
+                                    <Upload className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs font-medium text-foreground">
+                                        Subir Cédula o Constancia (PDF / Imagen)
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                        Autocompleta el número de cédula oficial DGP
+                                    </span>
+                                </label>
+                            )}
+                            {extractedCedulaMsg && (
+                                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1">
+                                    {extractedCedulaMsg}
+                                </p>
+                            )}
+                        </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="col-phone">Teléfono</Label>
                             <Input
@@ -752,8 +1036,8 @@ function TeamSection() {
                             <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={submitting}>
-                                {submitting ? "Registrando..." : "Agregar al Despacho"}
+                            <Button type="submit" disabled={submitting || extractingCedula}>
+                                {submitting ? "Enviando invitación..." : "Enviar Invitación y Generar Enlace"}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -796,6 +1080,71 @@ function TeamSection() {
                                 />
                             </div>
                         </div>
+
+                        {/* Dropzone Cédula Edit */}
+                        <div className="space-y-1.5 p-3 rounded-lg border border-dashed border-border text-center bg-muted/20">
+                            <Label className="text-xs font-semibold text-muted-foreground block text-left">
+                                Respaldo Digital de Cédula Profesional DGP / Carta de Pasante
+                            </Label>
+                            <input
+                                type="file"
+                                id="col_cred_file_edit"
+                                accept=".pdf,.png,.jpg,.jpeg"
+                                onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleCredentialUpload(f, true);
+                                }}
+                                className="hidden"
+                                disabled={extractingCedula}
+                            />
+                            {extractingCedula ? (
+                                <div className="flex items-center justify-center gap-2 py-2 text-xs text-primary font-medium">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <span>Extrayendo número de cédula e institución educativa...</span>
+                                </div>
+                            ) : editForm.professional_license_file_name ? (
+                                <div className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded border border-emerald-200 dark:border-emerald-800 text-xs text-left">
+                                    <div className="flex items-center gap-1.5 truncate">
+                                        <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                                        <span className="truncate">{editForm.professional_license_file_name}</span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() =>
+                                            setEditForm((prev) => ({
+                                                ...prev,
+                                                professional_license_file_path: "",
+                                                professional_license_file_name: "",
+                                            }))
+                                        }
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <label
+                                    htmlFor="col_cred_file_edit"
+                                    className="cursor-pointer flex flex-col items-center py-1.5 space-y-1"
+                                >
+                                    <Upload className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs font-medium text-foreground">
+                                        Actualizar Cédula o Constancia (PDF / Imagen)
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                        Autocompleta el número de cédula oficial DGP
+                                    </span>
+                                </label>
+                            )}
+                            {extractedCedulaMsg && (
+                                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1">
+                                    {extractedCedulaMsg}
+                                </p>
+                            )}
+                        </div>
+
                         <div className="space-y-2">
                             <Label>Teléfono</Label>
                             <Input

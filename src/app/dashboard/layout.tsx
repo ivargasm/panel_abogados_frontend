@@ -18,6 +18,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NavLinks, { DASHBOARD_NAV_LINKS } from "@/app/components/NavLinks";
+import SessionExpiryWatcher from "@/app/components/SessionExpiryWatcher";
 
 export default function DashboardLayout({
     children,
@@ -39,6 +40,7 @@ export default function DashboardLayout({
 
     return (
         <ProtectedRoute allowedRoles={["owner", "lawyer"]}>
+            <SessionExpiryWatcher />
             <div className="flex min-h-screen w-full flex-col bg-secondary/30 dark:bg-background">
                 {/* Barra lateral fija en escritorio */}
                 <aside className="fixed inset-y-0 left-0 z-30 hidden w-16 flex-col border-r bg-background sm:flex print:hidden">

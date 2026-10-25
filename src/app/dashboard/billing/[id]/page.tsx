@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, CreditCard, Pencil, Trash2, Plus, Printer, Scale } from "lucide-react";
+import { ArrowLeft, CreditCard, Pencil, Trash2, Plus, Printer, Scale, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import RecordPaymentModal from "@/components/billing/RecordPaymentModal";
@@ -24,7 +24,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { API_URL } from "@/app/lib/api";
+import { API_URL, getPaymentReceiptUrl } from "@/app/lib/api";
 import { useAuthStore } from "@/app/store/Store";
 import type { Invoice, InvoiceItemType, PaymentRecord } from "@/app/types";
 import { formatCurrencyMXN, PAYMENT_METHOD_LABELS } from "@/lib/legal-domain";
@@ -111,6 +111,17 @@ export default function InvoiceDetailPage() {
         } catch (error) {
             console.error("Error deleting payment:", error);
             toast.error("Error de conexión");
+        }
+    };
+
+    const handleViewReceipt = async (paymentId: number) => {
+        try {
+            const res = await getPaymentReceiptUrl(paymentId, API_URL);
+            if (res.download_url) {
+                window.open(res.download_url, "_blank");
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al consultar el comprobante");
         }
     };
 
@@ -337,6 +348,7 @@ export default function InvoiceDetailPage() {
                             <TableRow>
                                 <TableHead>Fecha de Recepción</TableHead>
                                 <TableHead>Forma de Pago</TableHead>
+                                <TableHead>Banco / Rastreo SPEI / Comprobante</TableHead>
                                 <TableHead>Referencia / Notas</TableHead>
                                 <TableHead className="text-right">Monto Abonado</TableHead>
                                 <TableHead className="text-right print:hidden">Acciones</TableHead>
@@ -350,6 +362,38 @@ export default function InvoiceDetailPage() {
                                             {format(new Date(payment.payment_date), "dd MMM yyyy, HH:mm", { locale: es })}
                                         </TableCell>
                                         <TableCell>{PAYMENT_METHOD_LABELS[payment.method] || payment.method}</TableCell>
+                                        <TableCell>
+                                            <div className="space-y-1">
+                                                {payment.issuing_bank && (
+                                                    <div className="text-xs font-semibold text-foreground">
+                                                        {payment.issuing_bank}
+                                                    </div>
+                                                )}
+                                                {payment.tracking_key && (
+                                                    <div className="text-[11px] font-mono text-muted-foreground truncate max-w-[220px]">
+                                                        SPEI: {payment.tracking_key}
+                                                    </div>
+                                                )}
+                                                {payment.receipt_file_path ? (
+                                                    <div className="pt-0.5">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleViewReceipt(payment.id)}
+                                                            className="h-6 px-2 text-xs text-primary gap-1 print:hidden"
+                                                        >
+                                                            <FileText className="h-3 w-3" /> Ver Comprobante
+                                                        </Button>
+                                                        <span className="hidden print:inline text-[10px] text-slate-500">
+                                                            • Comprobante resguardado en S3/MinIO
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    !payment.issuing_bank && !payment.tracking_key && <span className="text-muted-foreground">-</span>
+                                                )}
+                                            </div>
+                                        </TableCell>
                                         <TableCell>{payment.notes || "-"}</TableCell>
                                         <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-400">
                                             {formatCurrencyMXN(payment.amount)}
@@ -376,7 +420,7 @@ export default function InvoiceDetailPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
                                         No se han registrado abonos para este estado de cuenta.
                                     </TableCell>
                                 </TableRow>
