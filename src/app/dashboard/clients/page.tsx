@@ -21,6 +21,7 @@ import {
     ChevronRight,
     Download,
     AlertTriangle,
+    AlertCircle,
     Eye,
     Building2,
 } from "lucide-react";
@@ -64,14 +65,24 @@ import {
     getClients,
     createClient,
     updateClient,
+    assignClientLawyer,
     deleteClient,
     getCases,
     getInvoices,
     getDocumentsForCase,
     getDownloadUrl,
     checkConflictOfInterest,
+    getTeamMembers,
 } from "@/app/lib/api";
-import type { Case, Document, Invoice, ConflictCheckResult } from "@/app/types";
+import { useAuthStore } from "@/app/store/Store";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import type { Case, Document, Invoice, ConflictCheckResult, TeamMember } from "@/app/types";
 import { InvitationButton } from "@/components/clients/InvitationButton";
 import {
     formatCurrencyMXN,
@@ -93,16 +104,70 @@ type ClientRecord = {
     rfc: string | null;
     notes: string | null;
     can_view_billing: boolean;
+    assigned_lawyer_id?: number | null;
+    assigned_lawyer?: { id: number; full_name: string; email: string; professional_license?: string | null } | null;
     created_at?: string;
     updated_at?: string;
 };
 
+const OPTICAL_SUBSTITUTIONS_TO_LETTER: Record<string, string> = {
+    "0": "O",
+    "1": "I",
+    "2": "Z",
+    "5": "S",
+    "8": "B",
+};
+
+const OPTICAL_SUBSTITUTIONS_TO_DIGIT: Record<string, string> = {
+    "O": "0",
+    "I": "1",
+    "Z": "2",
+    "S": "5",
+    "B": "8",
+};
+
+function canonicalOpticalRfc(rfc: string): string {
+    const cleaned = rfc.toUpperCase().replace(/[^A-Z0-9&Ñ]/g, "").trim();
+    const chars = cleaned.split("");
+    const n = chars.length;
+    if (n === 12) {
+        for (let i = 0; i < 3; i++) {
+            if (OPTICAL_SUBSTITUTIONS_TO_LETTER[chars[i]]) {
+                chars[i] = OPTICAL_SUBSTITUTIONS_TO_LETTER[chars[i]];
+            }
+        }
+        for (let i = 3; i < 9; i++) {
+            if (OPTICAL_SUBSTITUTIONS_TO_DIGIT[chars[i]]) {
+                chars[i] = OPTICAL_SUBSTITUTIONS_TO_DIGIT[chars[i]];
+            }
+        }
+    } else if (n === 13) {
+        for (let i = 0; i < 4; i++) {
+            if (OPTICAL_SUBSTITUTIONS_TO_LETTER[chars[i]]) {
+                chars[i] = OPTICAL_SUBSTITUTIONS_TO_LETTER[chars[i]];
+            }
+        }
+        for (let i = 4; i < 10; i++) {
+            if (OPTICAL_SUBSTITUTIONS_TO_DIGIT[chars[i]]) {
+                chars[i] = OPTICAL_SUBSTITUTIONS_TO_DIGIT[chars[i]];
+            }
+        }
+    }
+    return chars.join("");
+}
+
 function ClientForm({
     client,
+    existingClients = [],
+    teamMembers = [],
+    isOwner = false,
     onSave,
     onFinish,
 }: {
     client: Partial<ClientRecord> | null;
+    existingClients?: ClientRecord[];
+    teamMembers?: TeamMember[];
+    isOwner?: boolean;
     onSave: (clientData: Omit<ClientRecord, "id">) => Promise<void>;
     onFinish: () => void;
 }) {
@@ -118,6 +183,7 @@ function ClientForm({
         rfc: string;
         notes: string;
         can_view_billing: boolean;
+        assigned_lawyer_id: string;
     }>({
         client_type: "FISICA",
         full_name: "",
@@ -130,9 +196,29 @@ function ClientForm({
         rfc: "",
         notes: "",
         can_view_billing: true,
+        assigned_lawyer_id: "0",
     });
     const [conflictResult, setConflictResult] = useState<ConflictCheckResult | null>(null);
     const [saving, setSaving] = useState(false);
+
+    const cleanedFormRfc = formData.rfc.replace(/[^A-Za-z0-9&Ñ]/g, "").toUpperCase();
+    const canonFormRfc = canonicalOpticalRfc(cleanedFormRfc);
+
+    const duplicateClient =
+        cleanedFormRfc.length >= 10 && existingClients
+            ? existingClients.find((c) => {
+                  if (c.id === client?.id || !c.rfc) return false;
+                  const cCleaned = c.rfc.replace(/[^A-Za-z0-9&Ñ]/g, "").toUpperCase();
+                  if (cCleaned === cleanedFormRfc) return true;
+                  if (
+                      (cCleaned.length === 12 || cCleaned.length === 13) &&
+                      (cleanedFormRfc.length === 12 || cleanedFormRfc.length === 13)
+                  ) {
+                      return canonicalOpticalRfc(cCleaned) === canonFormRfc;
+                  }
+                  return false;
+              })
+            : null;
 
     useEffect(() => {
         if (client) {
@@ -148,6 +234,7 @@ function ClientForm({
                 rfc: client.rfc || "",
                 notes: client.notes || "",
                 can_view_billing: client.can_view_billing ?? true,
+                assigned_lawyer_id: client.assigned_lawyer_id ? String(client.assigned_lawyer_id) : "0",
             });
         } else {
             setFormData({
@@ -162,6 +249,7 @@ function ClientForm({
                 rfc: "",
                 notes: "",
                 can_view_billing: true,
+                assigned_lawyer_id: "0",
             });
         }
     }, [client]);
@@ -204,6 +292,11 @@ function ClientForm({
                     ? (formData.representative_name.trim() || formData.business_name.trim())
                     : formData.full_name.trim();
 
+            const assignedLawyerId =
+                formData.assigned_lawyer_id && formData.assigned_lawyer_id !== "0"
+                    ? parseInt(formData.assigned_lawyer_id, 10)
+                    : null;
+
             await onSave({
                 ...formData,
                 full_name: resolvedFullName,
@@ -215,6 +308,7 @@ function ClientForm({
                 address: formData.address.trim() || null,
                 rfc: formData.rfc.trim().toUpperCase() || null,
                 notes: formData.notes.trim() || null,
+                assigned_lawyer_id: assignedLawyerId,
             });
             onFinish();
         } finally {
@@ -223,228 +317,272 @@ function ClientForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-4 py-2">
-            {/* Selector de Personalidad Jurídica */}
-            <div className="grid gap-2">
-                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Personalidad Jurídica (Derecho Civil y Mercantil Mexicano) *
-                </Label>
-                <div className="grid grid-cols-2 gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, client_type: "FISICA" }))}
-                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                            formData.client_type === "FISICA"
-                                ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
-                                : "border-border hover:bg-muted/50 text-muted-foreground"
-                        }`}
-                    >
-                        <UserIcon className="h-5 w-5 shrink-0" />
-                        <div>
-                            <div className="text-sm font-medium leading-none text-foreground">Persona Física</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">Sujeto individual (Nombre y Apellidos)</div>
-                        </div>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, client_type: "MORAL" }))}
-                        className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                            formData.client_type === "MORAL"
-                                ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
-                                : "border-border hover:bg-muted/50 text-muted-foreground"
-                        }`}
-                    >
-                        <Building2 className="h-5 w-5 shrink-0" />
-                        <div>
-                            <div className="text-sm font-medium leading-none text-foreground">Persona Moral</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">Sociedad / Empresa (Razón Social)</div>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-            {formData.client_type === "FISICA" ? (
+        <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[calc(90vh-140px)]">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 py-1">
+                {/* Selector de Personalidad Jurídica */}
                 <div className="grid gap-2">
-                    <Label htmlFor="full_name">Nombre Completo del Cliente *</Label>
-                    <Input
-                        id="full_name"
-                        name="full_name"
-                        placeholder="Ej: Dra. María Elena Hernández Soto"
-                        value={formData.full_name}
-                        onChange={handleInputChange}
-                        required
-                    />
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Personalidad Jurídica (Derecho Civil y Mercantil Mexicano) *
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, client_type: "FISICA" }))}
+                            className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                                formData.client_type === "FISICA"
+                                    ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                                    : "border-border hover:bg-muted/50 text-muted-foreground"
+                            }`}
+                        >
+                            <UserIcon className="h-5 w-5 shrink-0" />
+                            <div>
+                                <div className="text-sm font-medium leading-none text-foreground">Persona Física</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Sujeto individual (Nombre y Apellidos)</div>
+                            </div>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, client_type: "MORAL" }))}
+                            className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                                formData.client_type === "MORAL"
+                                    ? "border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary"
+                                    : "border-border hover:bg-muted/50 text-muted-foreground"
+                            }`}
+                        >
+                            <Building2 className="h-5 w-5 shrink-0" />
+                            <div>
+                                <div className="text-sm font-medium leading-none text-foreground">Persona Moral</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">Sociedad / Empresa (Razón Social)</div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
-            ) : (
-                <div className="grid gap-3 p-3 rounded-lg bg-muted/40 border border-border/80">
+
+                {formData.client_type === "FISICA" ? (
                     <div className="grid gap-2">
-                        <Label htmlFor="business_name">Razón o Denominación Social Oficial *</Label>
+                        <Label htmlFor="full_name">Nombre Completo del Cliente *</Label>
                         <Input
-                            id="business_name"
-                            name="business_name"
-                            placeholder="Ej: Constructora Horizonte Metropolitano, S.A. de C.V."
-                            value={formData.business_name}
+                            id="full_name"
+                            name="full_name"
+                            placeholder="Ej: Dra. María Elena Hernández Soto"
+                            value={formData.full_name}
                             onChange={handleInputChange}
                             required
                         />
-                        <span className="text-[11px] text-muted-foreground">
-                            Denominación conforme al Acta Constitutiva o Cédula de Identificación Fiscal SAT.
-                        </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="representative_name">Representante Legal / Apoderado *</Label>
+                ) : (
+                    <div className="grid gap-3 p-3 rounded-lg bg-muted/40 border border-border/80">
+                        <div className="grid gap-2">
+                            <Label htmlFor="business_name">Razón o Denominación Social Oficial *</Label>
                             <Input
-                                id="representative_name"
-                                name="representative_name"
-                                placeholder="Ej: Lic. Roberto González Méndez"
-                                value={formData.representative_name}
+                                id="business_name"
+                                name="business_name"
+                                placeholder="Ej: Constructora Horizonte Metropolitano, S.A. de C.V."
+                                value={formData.business_name}
                                 onChange={handleInputChange}
                                 required
                             />
                             <span className="text-[11px] text-muted-foreground">
-                                Apoderado con facultades para pleitos y cobranzas.
+                                Denominación conforme al Acta Constitutiva o Cédula de Identificación Fiscal SAT.
                             </span>
                         </div>
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="trade_name">Nombre Comercial / Marca (Opcional)</Label>
-                            <Input
-                                id="trade_name"
-                                name="trade_name"
-                                placeholder="Ej: Horizonte Homes"
-                                value={formData.trade_name}
-                                onChange={handleInputChange}
-                            />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="representative_name">Representante Legal / Apoderado *</Label>
+                                <Input
+                                    id="representative_name"
+                                    name="representative_name"
+                                    placeholder="Ej: Lic. Roberto González Méndez"
+                                    value={formData.representative_name}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <span className="text-[11px] text-muted-foreground">
+                                    Apoderado con facultades para pleitos y cobranzas.
+                                </span>
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="trade_name">Nombre Comercial / Marca (Opcional)</Label>
+                                <Input
+                                    id="trade_name"
+                                    name="trade_name"
+                                    placeholder="Ej: Horizonte Homes"
+                                    value={formData.trade_name}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Alerta Deontológica de Conflicto de Interés */}
-            {conflictResult && conflictResult.has_conflict && (
-                <div className="rounded-md border border-amber-400 bg-amber-500/10 p-3 text-xs space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-amber-700 dark:text-amber-400">
-                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                        Alerta Ética Deontológica: Posible Conflicto de Interés Detectado
+                {/* Alerta Deontológica de Conflicto de Interés */}
+                {conflictResult && conflictResult.has_conflict && (
+                    <div className="rounded-md border border-amber-400 bg-amber-500/10 p-3 text-xs space-y-2">
+                        <div className="flex items-center gap-2 font-semibold text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="h-4 w-4 shrink-0" />
+                            Alerta Ética Deontológica: Posible Conflicto de Interés Detectado
+                        </div>
+
+                        {conflictResult.opposing_party_matches.length > 0 && (
+                            <div>
+                                <p className="font-medium text-amber-800 dark:text-amber-300">
+                                    Coincidencia con <strong>Contraparte procesal</strong> en expedientes activos:
+                                </p>
+                                <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
+                                    {conflictResult.opposing_party_matches.map((m) => (
+                                        <li key={m.case_id}>
+                                            Contraparte <strong>{m.opposing_party}</strong> en <em>{m.case_title}</em>
+                                            {m.judicial_file_number ? ` (Exp. Judicial ${m.judicial_file_number})` : ""}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {conflictResult.client_matches.length > 0 && (
+                            <div>
+                                <p className="font-medium text-amber-800 dark:text-amber-300">
+                                    Coincidencia con <strong>Cliente activo</strong> del despacho:
+                                </p>
+                                <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
+                                    {conflictResult.client_matches.map((c) => (
+                                        <li key={c.client_id}>
+                                            <strong>{c.business_name || c.full_name}</strong>
+                                            {c.rfc ? ` (RFC: ${c.rfc})` : ""}
+                                            {c.match_reason ? ` — ${c.match_reason}` : ""}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
+                )}
 
-                    {conflictResult.opposing_party_matches.length > 0 && (
-                        <div>
-                            <p className="font-medium text-amber-800 dark:text-amber-300">
-                                Coincidencia con <strong>Contraparte procesal</strong> en expedientes activos:
-                            </p>
-                            <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
-                                {conflictResult.opposing_party_matches.map((m) => (
-                                    <li key={m.case_id}>
-                                        Contraparte <strong>{m.opposing_party}</strong> en <em>{m.case_title}</em>
-                                        {m.judicial_file_number ? ` (Exp. Judicial ${m.judicial_file_number})` : ""}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {conflictResult.client_matches.length > 0 && (
-                        <div>
-                            <p className="font-medium text-amber-800 dark:text-amber-300">
-                                Coincidencia con <strong>Cliente activo</strong> del despacho:
-                            </p>
-                            <ul className="list-disc pl-4 text-amber-900 dark:text-amber-200 mt-1 space-y-0.5">
-                                {conflictResult.client_matches.map((c) => (
-                                    <li key={c.client_id}>
-                                        <strong>{c.business_name || c.full_name}</strong>
-                                        {c.rfc ? ` (RFC: ${c.rfc})` : ""}
-                                        {c.match_reason ? ` — ${c.match_reason}` : ""}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Correo Institucional / Contacto</Label>
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder="contacto@empresa.mx"
+                            value={formData.email}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="phone_number">Teléfono / Celular</Label>
+                        <Input
+                            id="phone_number"
+                            name="phone_number"
+                            placeholder="55 1234 5678"
+                            value={formData.phone_number}
+                            onChange={handleInputChange}
+                        />
+                    </div>
                 </div>
-            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="rfc">
+                            RFC ({formData.client_type === "MORAL" ? "12 caracteres (Moral)" : "13 caracteres (Física)"})
+                        </Label>
+                        <Input
+                            id="rfc"
+                            name="rfc"
+                            maxLength={formData.client_type === "MORAL" ? 12 : 13}
+                            placeholder={formData.client_type === "MORAL" ? "IDB160921KL8" : "HESM850412AB1"}
+                            value={formData.rfc}
+                            onChange={handleInputChange}
+                            className={duplicateClient ? "border-destructive text-destructive" : ""}
+                        />
+                        {duplicateClient && (
+                            <div className="flex items-start gap-2 p-2.5 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs mt-1">
+                                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold">RFC ya registrado en tu despacho:</p>
+                                    <p>Pertenece a <strong>{duplicateClient.business_name || duplicateClient.full_name}</strong>.</p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                                        Para nuevos asuntos, abre un expediente desde la ficha de este cliente en lugar de duplicarlo.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="address">Domicilio Procesal / Convencional</Label>
+                        <Input
+                            id="address"
+                            name="address"
+                            placeholder="Calle, Número, Colonia, Municipio, C.P."
+                            value={formData.address}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+                </div>
+
+                {isOwner && teamMembers.length > 0 && (
+                    <div className="grid gap-2 p-3 rounded-lg bg-muted/40 border">
+                        <Label htmlFor="assigned_lawyer_id" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Abogado Asignado a la Cartera del Cliente
+                        </Label>
+                        <Select
+                            value={formData.assigned_lawyer_id}
+                            onValueChange={(val) => setFormData((prev) => ({ ...prev, assigned_lawyer_id: val }))}
+                        >
+                            <SelectTrigger id="assigned_lawyer_id" className="bg-background">
+                                <SelectValue placeholder="Seleccionar abogado responsable..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0">Despacho General / Titular</SelectItem>
+                                {teamMembers
+                                    .filter((m) => m.is_active)
+                                    .map((m) => (
+                                        <SelectItem key={m.id} value={String(m.id)}>
+                                            {m.full_name} ({m.role === "owner" ? "Titular" : "Colaborador"})
+                                        </SelectItem>
+                                    ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground">
+                            Los colaboradores con rol de abogado solo podrán acceder a clientes que tengan expresamente asignados o en cuyos expedientes participen.
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid gap-2">
-                    <Label htmlFor="email">Correo Institucional / Contacto</Label>
-                    <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="contacto@empresa.mx"
-                        value={formData.email}
+                    <Label htmlFor="notes">Antecedentes Jurídicos y Notas Confidenciales</Label>
+                    <Textarea
+                        id="notes"
+                        name="notes"
+                        value={formData.notes}
                         onChange={handleInputChange}
+                        placeholder="Observaciones relevantes sobre poderes notariales, facultades de pleitos y cobranzas, etc."
+                        className="min-h-[80px]"
                     />
                 </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="phone_number">Teléfono / Celular</Label>
-                    <Input
-                        id="phone_number"
-                        name="phone_number"
-                        placeholder="55 1234 5678"
-                        value={formData.phone_number}
-                        onChange={handleInputChange}
-                    />
-                </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                    <Label htmlFor="rfc">
-                        RFC ({formData.client_type === "MORAL" ? "12 caracteres (Moral)" : "13 caracteres (Física)"})
+                <div className="flex items-center space-x-2 pt-1">
+                    <Switch
+                        id="can_view_billing"
+                        checked={formData.can_view_billing}
+                        onCheckedChange={(checked) =>
+                            setFormData((prev) => ({ ...prev, can_view_billing: checked }))
+                        }
+                    />
+                    <Label htmlFor="can_view_billing" className="text-sm font-normal cursor-pointer">
+                        Habilitar consulta de Estado de Cuenta en el Portal del Cliente
                     </Label>
-                    <Input
-                        id="rfc"
-                        name="rfc"
-                        maxLength={formData.client_type === "MORAL" ? 12 : 13}
-                        placeholder={formData.client_type === "MORAL" ? "IDB160921KL8" : "HESM850412AB1"}
-                        value={formData.rfc}
-                        onChange={handleInputChange}
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="address">Domicilio Procesal / Convencional</Label>
-                    <Input
-                        id="address"
-                        name="address"
-                        placeholder="Calle, Número, Colonia, Municipio, C.P."
-                        value={formData.address}
-                        onChange={handleInputChange}
-                    />
                 </div>
             </div>
 
-            <div className="grid gap-2">
-                <Label htmlFor="notes">Antecedentes Jurídicos y Notas Confidenciales</Label>
-                <Textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    placeholder="Observaciones relevantes sobre poderes notariales, facultades de pleitos y cobranzas, etc."
-                    className="min-h-[80px]"
-                />
-            </div>
-
-            <div className="flex items-center space-x-2 pt-1">
-                <Switch
-                    id="can_view_billing"
-                    checked={formData.can_view_billing}
-                    onCheckedChange={(checked) =>
-                        setFormData((prev) => ({ ...prev, can_view_billing: checked }))
-                    }
-                />
-                <Label htmlFor="can_view_billing" className="text-sm font-normal cursor-pointer">
-                    Habilitar consulta de Estado de Cuenta en el Portal del Cliente
-                </Label>
-            </div>
-
-            <DialogFooter className="mt-2">
+            <DialogFooter className="pt-3 border-t mt-3 shrink-0 flex items-center justify-end gap-2 bg-background">
                 <Button type="button" variant="outline" onClick={onFinish}>
                     Cancelar
                 </Button>
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving || !!duplicateClient}>
                     {saving ? "Guardando..." : "Guardar Cliente"}
                 </Button>
             </DialogFooter>
@@ -454,6 +592,7 @@ function ClientForm({
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<ClientRecord[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [selectedClient, setSelectedClient] = useState<ClientRecord | null>(null);
     const [editingClient, setEditingClient] = useState<ClientRecord | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -467,12 +606,17 @@ export default function ClientsPage() {
     const [loadingInvoices, setLoadingInvoices] = useState(false);
 
     const router = useRouter();
+    const { user } = useAuthStore();
 
     useEffect(() => {
         const fetchClients = async () => {
             try {
-                const data = await getClients(API_URL);
+                const [data, team] = await Promise.all([
+                    getClients(API_URL),
+                    getTeamMembers(false, API_URL).catch(() => []),
+                ]);
                 setClients(data);
+                setTeamMembers(team);
                 if (data.length > 0 && !selectedClient) {
                     setSelectedClient(data[0]);
                 }
@@ -483,6 +627,23 @@ export default function ClientsPage() {
         fetchClients();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleReassignClient = async (clientId: number, lawyerIdStr: string) => {
+        const lawyerId = lawyerIdStr === "0" ? null : parseInt(lawyerIdStr, 10);
+        try {
+            const updated = await assignClientLawyer(clientId, lawyerId, API_URL);
+            setClients((prev) => prev.map((c) => (c.id === clientId ? updated : c)));
+            if (selectedClient?.id === clientId) {
+                setSelectedClient(updated);
+            }
+            const lawyerName = lawyerId
+                ? teamMembers.find((m) => m.id === lawyerId)?.full_name || "el abogado seleccionado"
+                : "el Despacho General";
+            toast.success(`Cartera del cliente asignada a ${lawyerName}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al asignar abogado al cliente");
+        }
+    };
 
     useEffect(() => {
         if (!selectedClient) return;
@@ -641,10 +802,15 @@ export default function ClientsPage() {
                                             </Avatar>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium truncate">{client.business_name || client.full_name}</p>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                                     <Badge variant="outline" className="text-[10px] px-1 py-0 font-normal">
                                                         {client.client_type === "MORAL" ? "Moral" : "Física"}
                                                     </Badge>
+                                                    {client.assigned_lawyer && (
+                                                        <Badge variant="secondary" className="text-[10px] px-1 py-0 font-normal truncate max-w-[120px]">
+                                                            {client.assigned_lawyer.full_name}
+                                                        </Badge>
+                                                    )}
                                                     <p className="text-xs text-muted-foreground truncate">
                                                         {client.rfc || client.email || "Sin correo"}
                                                     </p>
@@ -716,11 +882,21 @@ export default function ClientsPage() {
                                         <p className="text-sm text-muted-foreground truncate">
                                             {selectedClient.email || "Sin correo electrónico"} {selectedClient.rfc ? `• RFC: ${selectedClient.rfc}` : ""}
                                         </p>
-                                        <div className="flex flex-wrap gap-2 mt-2.5">
+                                        <div className="flex flex-wrap gap-2 mt-2.5 items-center">
                                             <InvitationButton
                                                 clientId={selectedClient.id}
                                                 clientEmail={selectedClient.email || undefined}
                                             />
+                                            {selectedClient.assigned_lawyer ? (
+                                                <Badge variant="secondary" className="text-xs">
+                                                    <UserIcon className="h-3 w-3 mr-1" />
+                                                    Abogado Asignado: {selectedClient.assigned_lawyer.full_name}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                    Despacho General (Titular)
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -875,6 +1051,38 @@ export default function ClientsPage() {
                                                                         ? "Visible en Portal del Cliente"
                                                                         : "Oculto en Portal del Cliente"}
                                                                 </Badge>
+                                                            </div>
+                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                                                <div className="flex items-center gap-2 text-muted-foreground w-40">
+                                                                    <UserIcon className="h-4 w-4" />
+                                                                    <span>Abogado Asignado:</span>
+                                                                </div>
+                                                                {user?.role === "owner" && teamMembers.length > 0 ? (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Select
+                                                                            value={String(selectedClient.assigned_lawyer_id || "0")}
+                                                                            onValueChange={(val) => handleReassignClient(selectedClient.id, val)}
+                                                                        >
+                                                                            <SelectTrigger className="h-7 w-auto min-w-[200px] text-xs font-semibold bg-background">
+                                                                                <SelectValue placeholder="Asignar abogado..." />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                <SelectItem value="0">Despacho General / Titular</SelectItem>
+                                                                                {teamMembers
+                                                                                    .filter((m) => m.is_active)
+                                                                                    .map((m) => (
+                                                                                        <SelectItem key={m.id} value={String(m.id)}>
+                                                                                            {m.full_name} ({m.role === "owner" ? "Titular" : "Colaborador"})
+                                                                                        </SelectItem>
+                                                                                    ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="font-medium">
+                                                                        {selectedClient.assigned_lawyer?.full_name || "Despacho General / Titular"}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1159,8 +1367,8 @@ export default function ClientsPage() {
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[650px] max-h-[92vh] flex flex-col p-6 overflow-hidden">
+                    <DialogHeader className="shrink-0 pb-3 border-b">
                         <DialogTitle>
                             {editingClient ? "Editar Datos del Cliente" : "Registrar Nuevo Cliente"}
                         </DialogTitle>
@@ -1172,6 +1380,9 @@ export default function ClientsPage() {
                     </DialogHeader>
                     <ClientForm
                         client={editingClient}
+                        existingClients={clients}
+                        teamMembers={teamMembers}
+                        isOwner={user?.role === "owner"}
                         onSave={handleSaveClient}
                         onFinish={() => setIsModalOpen(false)}
                     />

@@ -268,13 +268,16 @@ export default function RecordPaymentModal({ invoice, isOpen, onClose }: RecordP
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="tracking_key">Clave de Rastreo Banxico / Folio SPEI</Label>
+                        <Label htmlFor="tracking_key">Folio Bancario / Clave de Rastreo SPEI</Label>
                         <Input
                             id="tracking_key"
-                            placeholder="Ej: BNET01002610250001234567 o 2026102500000000..."
+                            placeholder="Ej: Folio: 849201 o Clave Banxico: 2026102500000000..."
                             value={formData.tracking_key}
                             onChange={(e) => setFormData({ ...formData, tracking_key: e.target.value })}
                         />
+                        <span className="text-[11px] text-muted-foreground">
+                            Acepta el folio preliminar de la app móvil o la clave oficial Banxico SPEI.
+                        </span>
                     </div>
 
                     <div className="space-y-1.5">

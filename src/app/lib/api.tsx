@@ -411,6 +411,17 @@ export async function updateClient(clientId: number, clientData: ClientData, url
     return res.json();
 }
 
+export async function assignClientLawyer(clientId: number, lawyerId: number | null, url: string = API_URL) {
+    const res = await fetch(`${url}/api/clients/${clientId}/assign-lawyer`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ assigned_lawyer_id: lawyerId }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al asignar abogado al cliente"));
+    return res.json();
+}
+
 export async function deleteClient(clientId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/clients/${clientId}`, {
         method: "DELETE",
@@ -452,6 +463,17 @@ export async function updateCase(caseId: number, caseData: CaseData, url: string
         body: JSON.stringify(caseData),
     });
     if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el expediente"));
+    return res.json();
+}
+
+export async function assignCaseLawyer(caseId: number, lawyerId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/cases/${caseId}/assign-lawyer`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ assigned_lawyer_id: lawyerId }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al reasignar el abogado del expediente"));
     return res.json();
 }
 
@@ -899,6 +921,26 @@ export async function getUpcomingDeadlines(url: string = API_URL, daysAhead: num
     });
     if (!res.ok) {
         throw new Error(await extractErrorMessage(res, "Error al obtener términos próximos"));
+    }
+    return res.json();
+}
+
+export async function getTeamPerformance(url: string = API_URL) {
+    const res = await fetch(`${url}/api/team/performance`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al obtener métricas de supervisión del equipo"));
+    }
+    return res.json();
+}
+
+export async function getTeamActivityFeed(url: string = API_URL, limit: number = 20) {
+    const res = await fetch(`${url}/api/team/activity-feed?limit=${limit}`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al obtener bitácora de actividad"));
     }
     return res.json();
 }

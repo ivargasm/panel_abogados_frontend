@@ -48,7 +48,14 @@ import {
     Loader2,
     X,
     FileCheck,
+    Activity,
+    TrendingUp,
+    ShieldAlert,
+    DollarSign,
+    Briefcase,
 } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { useAuthStore } from "@/app/store/Store";
 import { toast } from "sonner";
 import {
@@ -69,7 +76,10 @@ import {
     uploadFileToS3,
     uploadAndParseCredential,
     getMemberCredentialUrl,
+    getTeamPerformance,
+    getTeamActivityFeed,
 } from "@/app/lib/api";
+import { formatCurrencyMXN } from "@/lib/legal-domain";
 import type { TeamMember, TeamInvitation } from "@/app/types";
 
 type Section = "profile" | "team" | "general" | "security" | "subscription";
@@ -442,6 +452,37 @@ function TeamSection() {
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [teamSubtab, setTeamSubtab] = useState<"members" | "performance">("members");
+
+    const [teamPerf, setTeamPerf] = useState<{
+        summary: { total_members: number; total_active_cases: number; total_revenue_collected_mxn: number };
+        members: Array<{
+            user_id: number;
+            full_name: string;
+            role: string;
+            job_title: string;
+            email: string;
+            professional_license?: string | null;
+            is_active: boolean;
+            active_cases_count: number;
+            closed_cases_count: number;
+            fatal_deadlines_pending: number;
+            total_billed_mxn: number;
+            total_collected_mxn: number;
+            recent_actions_count: number;
+        }>;
+    } | null>(null);
+
+    const [activityFeed, setActivityFeed] = useState<Array<{
+        id: string;
+        type: string;
+        title: string;
+        description: string;
+        author_name: string;
+        case_title: string;
+        case_id: number;
+        timestamp: string | null;
+    }>>([]);
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -531,12 +572,24 @@ function TeamSection() {
             const data = await getTeamMembers(true, API_URL);
             setMembers(data);
             await loadInvitations();
+            if (isOwner) {
+                try {
+                    const [perf, feed] = await Promise.all([
+                        getTeamPerformance(API_URL),
+                        getTeamActivityFeed(API_URL, 20),
+                    ]);
+                    setTeamPerf(perf);
+                    setActivityFeed(feed);
+                } catch {
+                    // Silencio ante permisos
+                }
+            }
         } catch (err) {
             toast.error(err instanceof Error ? err.message : "Error al cargar los integrantes del despacho");
         } finally {
             setLoading(false);
         }
-    }, [loadInvitations]);
+    }, [loadInvitations, isOwner]);
 
     useEffect(() => {
         loadMembers();
@@ -691,9 +744,37 @@ function TeamSection() {
             </div>
             <Separator />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Directorio Jurídico del Despacho</CardTitle>
+            {isOwner && (
+                <div className="flex items-center gap-2 border-b pb-2">
+                    <Button
+                        variant={teamSubtab === "members" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setTeamSubtab("members")}
+                        className="gap-2 cursor-pointer font-medium"
+                    >
+                        <Users className="h-4 w-4" />
+                        Nómina y Credenciales DGP
+                    </Button>
+                    <Button
+                        variant={teamSubtab === "performance" ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setTeamSubtab("performance")}
+                        className="gap-2 cursor-pointer font-medium"
+                    >
+                        <Activity className="h-4 w-4 text-primary" />
+                        Supervisión y Desempeño
+                        <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
+                            Titular
+                        </Badge>
+                    </Button>
+                </div>
+            )}
+
+            {teamSubtab === "members" ? (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Directorio Jurídico del Despacho</CardTitle>
                     <CardDescription>
                         Los integrantes activos pueden consultar y gestionar expedientes del despacho y figurar como Abogado Responsable.
                     </CardDescription>
@@ -903,6 +984,194 @@ function TeamSection() {
                         </Table>
                     </CardContent>
                 </Card>
+            )}
+                </>
+            ) : (
+                <div className="space-y-6">
+                    {/* Tarjetas KPI */}
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <Card className="border-border">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Equipo Profesional
+                                </CardTitle>
+                                <Users className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {teamPerf?.summary.total_members || members.length}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Abogados y pasantes registrados
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-border">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Expedientes en Trámite
+                                </CardTitle>
+                                <Briefcase className="h-4 w-4 text-amber-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">
+                                    {teamPerf?.summary.total_active_cases || 0}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Asuntos activos bajo supervisión
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-border">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">
+                                    Cobranza por Asuntos Asignados
+                                </CardTitle>
+                                <DollarSign className="h-4 w-4 text-emerald-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                    {formatCurrencyMXN(teamPerf?.summary.total_revenue_collected_mxn || 0)}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Honorarios recaudados por el equipo
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Tabla de Rendición de Cuentas por Colaborador */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5 text-primary" />
+                                Rendición de Cuentas y Desempeño por Colaborador
+                            </CardTitle>
+                            <CardDescription>
+                                Auditoría directiva de carga procesal, cobranza generada y prevención de términos fatales.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="overflow-x-auto">
+                            <Table className="min-w-[700px]">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Abogado / Integrante</TableHead>
+                                        <TableHead className="text-center">Casos Activos</TableHead>
+                                        <TableHead className="text-center">Concluidos</TableHead>
+                                        <TableHead className="text-right">Cobranza Generada</TableHead>
+                                        <TableHead className="text-center">Términos Fatales (15d)</TableHead>
+                                        <TableHead className="text-center">Acciones (30d)</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {teamPerf?.members.map((m) => (
+                                        <TableRow key={m.user_id}>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold">{m.full_name}</span>
+                                                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                                            {m.role === "owner" ? "Titular" : "Colaborador"}
+                                                        </Badge>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground">{m.job_title}</span>
+                                                    {m.professional_license && (
+                                                        <span className="text-[11px] font-mono text-muted-foreground">
+                                                            Cédula: {m.professional_license}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-center font-bold text-base">
+                                                {m.active_cases_count}
+                                            </TableCell>
+                                            <TableCell className="text-center text-muted-foreground">
+                                                {m.closed_cases_count}
+                                            </TableCell>
+                                            <TableCell className="text-right font-medium text-emerald-600 dark:text-emerald-400">
+                                                {formatCurrencyMXN(m.total_collected_mxn)}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                {m.fatal_deadlines_pending > 0 ? (
+                                                    <Badge className="bg-destructive text-destructive-foreground gap-1">
+                                                        <ShieldAlert className="h-3 w-3" />
+                                                        {m.fatal_deadlines_pending} término{m.fatal_deadlines_pending > 1 ? "s" : ""}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">Al corriente</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge variant="secondary" className="font-mono text-xs">
+                                                    {m.recent_actions_count} reg.
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
+                    {/* Bitácora de Auditoría en Tiempo Real */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Activity className="h-5 w-5 text-blue-500" />
+                                Bitácora de Auditoría Procesal en Tiempo Real (Audit Trail)
+                            </CardTitle>
+                            <CardDescription>
+                                Registro cronológico de acuerdos, documentos ingresados a la bóveda digital y expedientes aperturados.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {activityFeed.length === 0 ? (
+                                <p className="text-sm text-muted-foreground py-4 text-center">
+                                    No se registran acciones recientes del equipo.
+                                </p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {activityFeed.map((evt) => (
+                                        <div
+                                            key={evt.id}
+                                            className="flex items-start gap-3 p-3 rounded-lg border border-border/80 bg-muted/20 text-xs"
+                                        >
+                                            <div className="p-1.5 rounded-full bg-primary/10 text-primary shrink-0 mt-0.5">
+                                                {evt.type === "case_update" ? (
+                                                    <FileText className="h-3.5 w-3.5" />
+                                                ) : evt.type === "document_upload" ? (
+                                                    <Upload className="h-3.5 w-3.5" />
+                                                ) : (
+                                                    <Briefcase className="h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p className="font-semibold text-foreground truncate">{evt.title}</p>
+                                                    {evt.timestamp && (
+                                                        <span className="text-[11px] text-muted-foreground shrink-0 font-mono">
+                                                            {format(new Date(evt.timestamp), "dd/MM/yyyy HH:mm", { locale: es })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-muted-foreground mt-0.5 line-clamp-2">
+                                                    {evt.description}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                                                    <span>Por: <strong className="text-foreground">{evt.author_name}</strong></span>
+                                                    <span>•</span>
+                                                    <span>Expediente: <em>{evt.case_title}</em></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             {/* Modal Invitar Colaborador (Enfoque A: Sin contraseña manual) */}

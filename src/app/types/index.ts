@@ -13,6 +13,7 @@ export type ClientData = {
     rfc?: string | null;
     notes?: string | null;
     can_view_billing?: boolean;
+    assigned_lawyer_id?: number | null;
 };
 
 export type CaseData = {
@@ -34,6 +35,7 @@ export type Client = ClientData & {
     workspace_id: number;
     created_at: string;
     updated_at?: string;
+    assigned_lawyer?: LawyerPublicInfo | null;
 };
 
 export type LawyerPublicInfo = {

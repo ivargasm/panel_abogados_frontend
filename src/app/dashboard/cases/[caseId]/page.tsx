@@ -58,9 +58,11 @@ import {
     updateCaseUpdate,
     deleteCaseUpdate,
     updateCaseStatus,
+    assignCaseLawyer,
+    getTeamMembers,
 } from "@/app/lib/api";
 import DocumentsCard from "./components/DocumentsCard";
-import type { Case, CaseUpdate, CaseUpdateData, UpdateStatus } from "@/app/types";
+import type { Case, CaseUpdate, CaseUpdateData, UpdateStatus, TeamMember } from "@/app/types";
 import {
     CASE_STATUS_OPTIONS,
     getCaseStatusLabel,
@@ -330,6 +332,7 @@ export default function CaseDetailPage() {
 
     const [caseDetails, setCaseDetails] = useState<Case | null>(null);
     const [updates, setUpdates] = useState<CaseUpdate[]>([]);
+    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editingUpdate, setEditingUpdate] = useState<CaseUpdate | null>(null);
@@ -343,12 +346,14 @@ export default function CaseDetailPage() {
         }
         try {
             setLoading(true);
-            const [detailsData, updatesData] = await Promise.all([
+            const [detailsData, updatesData, teamData] = await Promise.all([
                 getCaseById(caseId, API_URL),
                 getCaseUpdates(caseId, API_URL),
+                getTeamMembers(false, API_URL).catch(() => []),
             ]);
             setCaseDetails(detailsData);
             setUpdates(updatesData);
+            setTeamMembers(teamData);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Error al cargar el expediente.");
         } finally {
@@ -359,6 +364,19 @@ export default function CaseDetailPage() {
     useEffect(() => {
         fetchCaseData();
     }, [fetchCaseData]);
+
+    const handleReassignLawyer = async (newLawyerIdStr: string) => {
+        if (!caseDetails) return;
+        const lawyerId = parseInt(newLawyerIdStr, 10);
+        try {
+            const updated = await assignCaseLawyer(caseDetails.id, lawyerId, API_URL);
+            setCaseDetails(updated);
+            const lawyerName = teamMembers.find((m) => m.id === lawyerId)?.full_name || "el abogado seleccionado";
+            toast.success(`Expediente reasignado exitosamente a ${lawyerName}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al reasignar el expediente");
+        }
+    };
 
     const handleUpdateCreated = (newUpdate: CaseUpdate) => {
         setUpdates((prev) => [newUpdate, ...prev]);
@@ -560,17 +578,47 @@ export default function CaseDetailPage() {
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
                                 Abogado Responsable
                             </p>
-                            <p className="font-semibold mt-0.5">
-                                {caseDetails.assigned_lawyer?.full_name || user?.full_name}
-                            </p>
-                            {caseDetails.assigned_lawyer?.professional_license && (
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                    <Award className="h-3 w-3" />
-                                    Cédula: {caseDetails.assigned_lawyer.professional_license}
-                                </p>
+                            {user?.role === "owner" && teamMembers.length > 0 ? (
+                                <div className="space-y-1">
+                                    <Select
+                                        value={String(caseDetails.assigned_lawyer_id || "")}
+                                        onValueChange={handleReassignLawyer}
+                                    >
+                                        <SelectTrigger className="h-8 w-auto min-w-[200px] text-xs font-semibold bg-background">
+                                            <SelectValue placeholder="Reasignar abogado..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {teamMembers
+                                                .filter((m) => m.is_active)
+                                                .map((m) => (
+                                                    <SelectItem key={m.id} value={String(m.id)}>
+                                                        {m.full_name} ({m.role === "owner" ? "Titular" : "Colaborador"})
+                                                    </SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {caseDetails.assigned_lawyer?.professional_license && (
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Award className="h-3 w-3" />
+                                            Cédula: {caseDetails.assigned_lawyer.professional_license}
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="font-semibold mt-0.5">
+                                        {caseDetails.assigned_lawyer?.full_name || user?.full_name}
+                                    </p>
+                                    {caseDetails.assigned_lawyer?.professional_license && (
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Award className="h-3 w-3" />
+                                            Cédula: {caseDetails.assigned_lawyer.professional_license}
+                                        </p>
+                                    )}
+                                </div>
                             )}
                         </div>
                     </div>

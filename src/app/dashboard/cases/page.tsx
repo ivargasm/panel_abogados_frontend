@@ -61,6 +61,7 @@ import {
     createCase,
     getClients,
     updateCase,
+    assignCaseLawyer,
     updateCaseStatus,
     deleteCase,
     getCaseUpdates,
@@ -70,6 +71,7 @@ import {
     getTeamMembers,
     checkConflictOfInterest,
 } from "@/app/lib/api";
+import { useAuthStore } from "@/app/store/Store";
 import type {
     Case,
     CaseData,
@@ -576,6 +578,22 @@ export default function CasesPage() {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
     const router = useRouter();
+    const { user } = useAuthStore();
+
+    const handleQuickReassignLawyer = async (caseId: number, lawyerIdStr: string) => {
+        const lawyerId = parseInt(lawyerIdStr, 10);
+        try {
+            const updated = await assignCaseLawyer(caseId, lawyerId, API_URL);
+            setCases((prev) => prev.map((c) => (c.id === caseId ? updated : c)));
+            if (selectedCase?.id === caseId) {
+                setSelectedCase(updated);
+            }
+            const lawyerName = teamMembers.find((m) => m.id === lawyerId)?.full_name || "el abogado seleccionado";
+            toast.success(`Expediente reasignado exitosamente a ${lawyerName}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al reasignar el expediente");
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -1038,22 +1056,45 @@ export default function CasesPage() {
                                                                 </p>
                                                             </div>
                                                             <div>
-                                                                <p className="text-xs text-muted-foreground">
+                                                                <p className="text-xs text-muted-foreground mb-1">
                                                                     Abogado Responsable
                                                                 </p>
-                                                                <p className="font-medium">
-                                                                    {selectedCase.assigned_lawyer?.full_name ||
-                                                                        "Titular del Despacho"}
-                                                                </p>
-                                                                {selectedCase.assigned_lawyer
-                                                                    ?.professional_license && (
-                                                                    <span className="text-xs text-muted-foreground">
-                                                                        Cédula:{" "}
-                                                                        {
-                                                                            selectedCase.assigned_lawyer
-                                                                                .professional_license
-                                                                        }
-                                                                    </span>
+                                                                {user?.role === "owner" && teamMembers.length > 0 ? (
+                                                                    <div className="space-y-1">
+                                                                        <Select
+                                                                            value={String(selectedCase.assigned_lawyer_id || "")}
+                                                                            onValueChange={(val) => handleQuickReassignLawyer(selectedCase.id, val)}
+                                                                        >
+                                                                            <SelectTrigger className="h-7 w-auto min-w-[190px] text-xs font-semibold bg-background">
+                                                                                <SelectValue placeholder="Reasignar abogado..." />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {teamMembers
+                                                                                    .filter((m) => m.is_active)
+                                                                                    .map((m) => (
+                                                                                        <SelectItem key={m.id} value={String(m.id)}>
+                                                                                            {m.full_name} ({m.role === "owner" ? "Titular" : "Colaborador"})
+                                                                                        </SelectItem>
+                                                                                    ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        {selectedCase.assigned_lawyer?.professional_license && (
+                                                                            <span className="text-xs text-muted-foreground block">
+                                                                                Cédula: {selectedCase.assigned_lawyer.professional_license}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div>
+                                                                        <p className="font-medium">
+                                                                            {selectedCase.assigned_lawyer?.full_name || "Titular del Despacho"}
+                                                                        </p>
+                                                                        {selectedCase.assigned_lawyer?.professional_license && (
+                                                                            <span className="text-xs text-muted-foreground">
+                                                                                Cédula: {selectedCase.assigned_lawyer.professional_license}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                             <div>
