@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { useAuthStore } from '@/app/store/Store';
-import { Users, Briefcase, Calendar, FileText, CheckCircle2 } from 'lucide-react';
-import StatsCard from '@/app/components/dashboard/StatsCard';
-import RecentActivity from '@/app/components/dashboard/RecentActivity';
-import UpcomingDeadlines from '@/app/components/dashboard/UpcomingDeadlines';
-import { DashboardCard } from '@/app/components/dashboard/DashboardCard';
-import { getDashboardStats, getRecentActivity, getUpcomingDeadlines } from '@/app/lib/api';
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useAuthStore } from "@/app/store/Store";
+import { Users, Briefcase, Calendar, FileText, CheckCircle2 } from "lucide-react";
+import StatsCard from "@/app/components/dashboard/StatsCard";
+import RecentActivity from "@/app/components/dashboard/RecentActivity";
+import UpcomingDeadlines from "@/app/components/dashboard/UpcomingDeadlines";
+import { DashboardCard } from "@/app/components/dashboard/DashboardCard";
+import { API_URL, getDashboardStats, getRecentActivity, getUpcomingDeadlines } from "@/app/lib/api";
 
 export default function DashboardContent() {
     const { user } = useAuthStore();
@@ -27,19 +27,17 @@ export default function DashboardContent() {
         const fetchDashboardData = async () => {
             try {
                 setLoading(true);
-                const { url } = useAuthStore.getState();
-
-                const statsData = await getDashboardStats(url);
+                const [statsData, activityData, deadlinesData] = await Promise.all([
+                    getDashboardStats(API_URL),
+                    getRecentActivity(API_URL, 6),
+                    getUpcomingDeadlines(API_URL, 30),
+                ]);
                 setStats(statsData);
-
-                const activityData = await getRecentActivity(url, 5);
                 setActivities(activityData);
-
-                const deadlinesData = await getUpcomingDeadlines(url, 30);
                 setDeadlines(deadlinesData);
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-                toast.error('Error al cargar datos del dashboard');
+                console.error("Error fetching dashboard data:", error);
+                toast.error("Error al cargar indicadores del despacho");
             } finally {
                 setLoading(false);
             }
@@ -49,74 +47,78 @@ export default function DashboardContent() {
     }, []);
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold">Bienvenido, {user?.full_name}</h1>
-                <p className="text-muted-foreground">Gestiona tu práctica legal desde un solo lugar.</p>
+        <div className="container mx-auto space-y-8">
+            <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                    Bienvenido, {user?.full_name}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                    Panel de control procesal, términos judiciales y estados de cuenta de{" "}
+                    <span className="font-medium text-foreground">
+                        {user?.workspace_name || "tu despacho jurídico"}
+                    </span>
+                    .
+                </p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatsCard
-                    title="Casos Activos"
+                    title="Expedientes en Trámite"
                     value={loading ? "..." : stats.active_cases}
                     icon={Briefcase}
                     iconColor="text-[var(--dashboard-document)]"
                 />
                 <StatsCard
-                    title="Audiencias Próximas"
+                    title="Audiencias y Términos"
                     value={loading ? "..." : stats.upcoming_hearings}
                     icon={Calendar}
                     iconColor="text-[var(--dashboard-message)]"
                 />
                 <StatsCard
-                    title="Tareas Pendientes"
+                    title="Diligencias Pendientes"
                     value={loading ? "..." : stats.pending_tasks}
                     icon={CheckCircle2}
                     iconColor="text-[var(--dashboard-task)]"
                 />
                 <StatsCard
-                    title="Total Clientes"
+                    title="Clientes Representados"
                     value={loading ? "..." : stats.total_clients}
                     icon={Users}
                     iconColor="text-[var(--dashboard-status)]"
                 />
             </div>
 
-            {/* Activity and Deadlines */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <RecentActivity activities={activities} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <UpcomingDeadlines deadlines={deadlines} />
+                <RecentActivity activities={activities} />
             </div>
 
-            {/* Quick Links */}
             <div>
-                <h2 className="text-xl font-semibold mb-4">Accesos Rápidos</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <h2 className="text-lg font-semibold mb-4">Módulos del Despacho</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     <DashboardCard
-                        title="Clientes"
-                        description="Gestiona tus clientes"
+                        title="Cartera de Clientes"
+                        description="Representados, RFC y Portal del Cliente"
                         href="/dashboard/clients"
-                        icon={<Users className="h-8 w-8 text-blue-500" />}
+                        icon={<Users className="h-7 w-7 text-sky-600" />}
                     />
                     <DashboardCard
-                        title="Casos"
-                        description="Administra los expedientes"
+                        title="Expedientes"
+                        description="Carátulas procesales, juzgados y acuerdos"
                         href="/dashboard/cases"
-                        icon={<Briefcase className="h-8 w-8 text-green-500" />}
+                        icon={<Briefcase className="h-7 w-7 text-emerald-600" />}
                     />
                     <DashboardCard
-                        title="Calendario"
-                        description="Controla tus vencimientos"
+                        title="Agenda Judicial"
+                        description="Audiencias, términos fatales y alertas"
                         href="/dashboard/calendar"
-                        icon={<Calendar className="h-8 w-8 text-yellow-500" />}
+                        icon={<Calendar className="h-7 w-7 text-amber-600" />}
                     />
                     <DashboardCard
-                        title="Facturación"
-                        description="Administra tus facturas"
+                        title="Honorarios"
+                        description="Estados de cuenta, anticipos y abonos"
                         href="/dashboard/billing"
-                        icon={<FileText className="h-8 w-8 text-red-500" />}
+                        icon={<FileText className="h-7 w-7 text-purple-600" />}
                     />
                 </div>
             </div>

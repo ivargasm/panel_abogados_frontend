@@ -1,34 +1,78 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { User, Settings, Lock, Bell, Blocks, CreditCard, Check } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import {
+    User,
+    Settings,
+    Lock,
+    CreditCard,
+    Check,
+    Users,
+    Plus,
+    Pencil,
+    UserX,
+    UserCheck,
+    Building2,
+    Award,
+    Sun,
+    Moon,
+} from "lucide-react";
 import { useAuthStore } from "@/app/store/Store";
 import { toast } from "sonner";
-import { createCheckoutSession, createCustomerPortalSession } from "@/app/lib/api";
+import {
+    API_URL,
+    createCheckoutSession,
+    createCustomerPortalSession,
+    getTeamMembers,
+    createTeamMember,
+    updateTeamMember,
+    deactivateTeamMember,
+    updateWorkspaceName,
+    updateUserProfile,
+    changePassword,
+    initiateProfilePictureUpload,
+    uploadFileToS3,
+} from "@/app/lib/api";
+import type { TeamMember } from "@/app/types";
 
-type Section = "general" | "profile" | "security" | "notifications" | "integrations" | "subscription";
+type Section = "profile" | "team" | "general" | "security" | "subscription";
 
 export default function SettingsLayout() {
     const [activeSection, setActiveSection] = useState<Section>("profile");
 
     const menuItems = [
-        { id: "general" as Section, label: "General", icon: Settings },
-        { id: "profile" as Section, label: "Perfil de Usuario", icon: User },
+        { id: "profile" as Section, label: "Perfil Profesional", icon: User },
+        { id: "team" as Section, label: "Equipo y Colaboradores", icon: Users },
+        { id: "general" as Section, label: "Despacho y Apariencia", icon: Building2 },
         { id: "security" as Section, label: "Seguridad", icon: Lock },
-        { id: "notifications" as Section, label: "Notificaciones", icon: Bell },
-        { id: "integrations" as Section, label: "Integraciones", icon: Blocks },
         { id: "subscription" as Section, label: "Suscripción", icon: CreditCard },
     ];
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 md:w-full">
-            {/* Sidebar */}
+        <div className="flex flex-col md:flex-row gap-8 w-full">
             <aside className="md:w-64 flex-shrink-0">
                 <nav className="flex flex-col space-y-1">
                     {menuItems.map((item) => {
@@ -37,10 +81,11 @@ export default function SettingsLayout() {
                             <Button
                                 key={item.id}
                                 variant={activeSection === item.id ? "secondary" : "ghost"}
-                                className={`justify-start ${activeSection === item.id
-                                    ? "font-medium"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    }`}
+                                className={`justify-start ${
+                                    activeSection === item.id
+                                        ? "font-semibold"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                }`}
                                 onClick={() => setActiveSection(item.id)}
                             >
                                 <Icon className="mr-2 h-4 w-4" />
@@ -51,62 +96,138 @@ export default function SettingsLayout() {
                 </nav>
             </aside>
 
-            {/* Main Content */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
                 {activeSection === "profile" && <ProfileSection />}
+                {activeSection === "team" && <TeamSection />}
+                {activeSection === "general" && <GeneralSection />}
                 {activeSection === "security" && <SecuritySection />}
                 {activeSection === "subscription" && <SubscriptionSection />}
-                {activeSection === "general" && <GeneralSection />}
-                {activeSection === "notifications" && <ComingSoonSection title="Notificaciones" />}
-                {activeSection === "integrations" && <ComingSoonSection title="Integraciones" />}
-            </div>
-        </div>
-    );
-}
-
-function ComingSoonSection({ title }: { title: string }) {
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-                <p className="text-muted-foreground">Esta sección estará disponible próximamente.</p>
             </div>
         </div>
     );
 }
 
 function GeneralSection() {
+    const { user, setUser } = useAuthStore();
+    const isOwner = user?.role === "owner";
+    const [workspaceName, setWorkspaceName] = useState(user?.workspace_name || "");
+    const [savingWorkspace, setSavingWorkspace] = useState(false);
+
+    useEffect(() => {
+        if (user?.workspace_name) {
+            setWorkspaceName(user.workspace_name);
+        }
+    }, [user?.workspace_name]);
+
+    const handleSaveWorkspace = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!workspaceName.trim()) {
+            toast.error("El nombre del despacho no puede estar vacío");
+            return;
+        }
+        setSavingWorkspace(true);
+        try {
+            const res = await updateWorkspaceName(workspaceName.trim(), API_URL);
+            if (user) {
+                setUser({ ...user, workspace_name: res.name });
+            }
+            toast.success("Nombre del despacho actualizado");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al actualizar el despacho");
+        } finally {
+            setSavingWorkspace(false);
+        }
+    };
+
+    const setTheme = (mode: "light" | "dark") => {
+        if (mode === "dark") {
+            document.documentElement.classList.add("dark");
+        } else {
+            document.documentElement.classList.remove("dark");
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">General</h1>
-                <p className="text-muted-foreground">Configuración general de la aplicación.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Despacho y Apariencia</h1>
+                <p className="text-muted-foreground">
+                    Configura la razón o denominación del despacho que aparece en carátulas, estados de cuenta y el Portal del Cliente.
+                </p>
             </div>
             <Separator />
+
             <Card>
-                <CardContent className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <Building2 className="h-5 w-5 text-primary" />
+                        Identidad del Despacho Jurídico
+                    </CardTitle>
+                    <CardDescription>
+                        Este nombre encabeza los reportes imprimibles (PDF) y las notificaciones enviadas a tus representados.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSaveWorkspace} className="space-y-4">
+                        <div className="space-y-2 max-w-xl">
+                            <Label htmlFor="workspace_name">Nombre o Denominación del Despacho</Label>
+                            <Input
+                                id="workspace_name"
+                                value={workspaceName}
+                                onChange={(e) => setWorkspaceName(e.target.value)}
+                                placeholder="Ej: Bufete Jurídico Vargas & Asociados, S.C."
+                                disabled={!isOwner}
+                            />
+                            {!isOwner && (
+                                <p className="text-xs text-muted-foreground">
+                                    Solo el titular del despacho puede modificar la denominación oficial.
+                                </p>
+                            )}
+                        </div>
+                        {isOwner && (
+                            <Button type="submit" disabled={savingWorkspace}>
+                                {savingWorkspace ? "Guardando..." : "Guardar Nombre del Despacho"}
+                            </Button>
+                        )}
+                    </form>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <Settings className="h-5 w-5 text-primary" />
+                        Preferencias de Interfaz
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="space-y-0.5">
-                            <Label className="text-base">Tema</Label>
+                            <Label className="text-base">Tema Visual</Label>
                             <p className="text-sm text-muted-foreground">
-                                Personaliza la apariencia de la aplicación.
+                                Alterna entre interfaz clara de lectura o modo oscuro de descanso visual.
                             </p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm">Claro</Button>
-                            <Button variant="outline" size="sm" className="bg-slate-950 text-white hover:bg-slate-800 hover:text-white">Oscuro</Button>
-                            <Button variant="outline" size="sm">Sistema</Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setTheme("light")}>
+                                <Sun className="h-4 w-4 mr-1.5" />
+                                Claro
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setTheme("dark")}>
+                                <Moon className="h-4 w-4 mr-1.5" />
+                                Oscuro
+                            </Button>
                         </div>
                     </div>
                     <Separator />
                     <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label className="text-base">Idioma</Label>
+                            <Label className="text-base">Jurisdicción e Idioma</Label>
                             <p className="text-sm text-muted-foreground">
-                                Selecciona el idioma de la interfaz.
+                                Nomenclatura procesal configurada para práctica jurídica en México.
                             </p>
                         </div>
-                        <Button variant="outline" disabled>Español (México)</Button>
+                        <Badge variant="secondary">Español (México)</Badge>
                     </div>
                 </CardContent>
             </Card>
@@ -115,20 +236,22 @@ function GeneralSection() {
 }
 
 function ProfileSection() {
-    const { user } = useAuthStore();
+    const { user, setUser } = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         full_name: user?.full_name || "",
         phone_number: user?.phone_number || "",
         job_title: user?.job_title || "",
+        professional_license: user?.professional_license || "",
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (user) {
             setFormData({
                 full_name: user.full_name || "",
                 phone_number: user.phone_number || "",
                 job_title: user.job_title || "",
+                professional_license: user.professional_license || "",
             });
         }
     }, [user]);
@@ -136,68 +259,53 @@ function ProfileSection() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
         try {
-            const { updateUserProfile } = await import("@/app/lib/api");
-            const apiUrl = useAuthStore.getState().url;
-            const updatedUser = await updateUserProfile(formData, apiUrl);
-            useAuthStore.setState({ user: updatedUser });
-            toast.success("Perfil actualizado correctamente");
+            const updatedUser = await updateUserProfile(formData, API_URL);
+            setUser({ ...user, ...updatedUser });
+            toast.success("Perfil profesional actualizado correctamente");
         } catch (error) {
-            console.error("Error:", error);
-            toast.error("No se pudo actualizar tu perfil. Inténtalo de nuevo.");
+            toast.error(error instanceof Error ? error.message : "No se pudo actualizar tu perfil.");
         } finally {
             setLoading(false);
         }
     };
 
-    const getInitials = (name: string) => {
-        return name
+    const getInitials = (name: string) =>
+        name
             .split(" ")
             .map((n) => n[0])
             .join("")
             .toUpperCase()
             .slice(0, 2);
-    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validar tamaño y tipo (opcional pero recomendado)
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-            toast.error("El archivo es demasiado grande. Máximo 5MB.");
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("El archivo es demasiado grande. Máximo 5 MB.");
             return;
         }
-
         if (!file.type.startsWith("image/")) {
             toast.error("Solo se permiten archivos de imagen.");
             return;
         }
 
-        const toastId = toast.loading("Subiendo foto de perfil...");
-
+        const toastId = toast.loading("Subiendo fotografía profesional...");
         try {
-            const { initiateProfilePictureUpload, uploadFileToS3, updateUserProfile } = await import("@/app/lib/api");
-            const apiUrl = useAuthStore.getState().url;
-
-            // 1. Obtener URL firmada
-            const { upload_url, file_path } = await initiateProfilePictureUpload(file.name, file.type, file.size, apiUrl);
-
-            // 2. Subir a S3
+            const { upload_url, file_path } = await initiateProfilePictureUpload(
+                file.name,
+                file.type,
+                file.size,
+                API_URL
+            );
             await uploadFileToS3(upload_url, file);
-
-            // 3. Actualizar perfil con la nueva URL (path)
-            const updatedUser = await updateUserProfile({ profile_picture_url: file_path }, apiUrl);
-
-            // 4. Actualizar estado local
-            useAuthStore.setState({ user: updatedUser });
-
-            toast.success("Foto de perfil actualizada", { id: toastId });
+            const updatedUser = await updateUserProfile({ profile_picture_url: file_path }, API_URL);
+            setUser({ ...user, ...updatedUser });
+            toast.success("Fotografía actualizada", { id: toastId });
         } catch {
-            toast.error("Error al subir la foto", { id: toastId });
+            toast.error("Error al subir la fotografía", { id: toastId });
         } finally {
-            // Limpiar input
             e.target.value = "";
         }
     };
@@ -205,24 +313,33 @@ function ProfileSection() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Perfil de Usuario</h1>
-                <p className="text-muted-foreground">Gestiona tu información personal y configuración del perfil.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Perfil Profesional</h1>
+                <p className="text-muted-foreground">
+                    Tus datos profesionales y Cédula se muestran a los clientes asignados a tus expedientes.
+                </p>
             </div>
             <Separator />
 
             <Card>
                 <CardContent className="p-6 space-y-8">
-                    {/* Profile Picture Section */}
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                         <Avatar className="h-24 w-24">
                             <AvatarImage src={user?.profile_picture_url || ""} alt="Avatar" />
-                            <AvatarFallback className="text-lg bg-pink-200 text-pink-700">
-                                {user?.full_name ? getInitials(user.full_name) : "U"}
+                            <AvatarFallback className="text-lg bg-primary/15 text-primary font-bold">
+                                {user?.full_name ? getInitials(user.full_name) : "AB"}
                             </AvatarFallback>
                         </Avatar>
                         <div className="space-y-1 text-center sm:text-left flex-1">
-                            <h3 className="text-xl font-semibold">{user?.full_name || "Usuario"}</h3>
-                            <p className="text-sm text-muted-foreground">{user?.job_title || "Sin cargo"}</p>
+                            <h3 className="text-xl font-semibold">{user?.full_name || "Abogado"}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                {user?.job_title || (user?.role === "owner" ? "Socio Titular" : "Abogado Colaborador")}
+                            </p>
+                            {user?.professional_license && (
+                                <Badge variant="secondary" className="gap-1">
+                                    <Award className="h-3.5 w-3.5" />
+                                    Cédula Prof. {user.professional_license}
+                                </Badge>
+                            )}
                         </div>
                         <div>
                             <input
@@ -234,74 +351,478 @@ function ProfileSection() {
                             />
                             <Button
                                 variant="outline"
-                                className="bg-gray-50"
                                 onClick={() => document.getElementById("avatar-upload")?.click()}
                             >
-                                Subir nueva foto
+                                Cambiar fotografía
                             </Button>
                         </div>
                     </div>
 
                     <Separator />
 
-                    {/* Personal Information Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <h3 className="text-lg font-medium">Información Personal</h3>
+                        <h3 className="text-lg font-medium">Datos de Identificación</h3>
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="full_name">Nombre Completo</Label>
+                                <Label htmlFor="full_name">Nombre Completo (con título)</Label>
                                 <Input
                                     id="full_name"
+                                    placeholder="Ej: Lic. Iván Vargas"
                                     value={formData.full_name}
                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="job_title">Cargo</Label>
+                                <Label htmlFor="job_title">Cargo en el Despacho</Label>
                                 <Input
                                     id="job_title"
+                                    placeholder="Ej: Socio Director / Abogado Litigante"
                                     value={formData.job_title}
                                     onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
                                 />
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Correo Electrónico</Label>
-                            <Input id="email" type="email" value={user?.email || ""} disabled />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone_number">Teléfono</Label>
-                            <Input
-                                id="phone_number"
-                                type="tel"
-                                value={formData.phone_number}
-                                onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="professional_license">Cédula Profesional (SEP / DGP)</Label>
+                                <Input
+                                    id="professional_license"
+                                    placeholder="Ej: 12849302 (o 'En trámite' si eres pasante)"
+                                    value={formData.professional_license}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, professional_license: e.target.value })
+                                    }
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone_number">Teléfono de Contacto</Label>
+                                <Input
+                                    id="phone_number"
+                                    type="tel"
+                                    placeholder="Ej: 55 1234 5678"
+                                    value={formData.phone_number}
+                                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex justify-end gap-4 pt-4">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => {
-                                    if (user) {
-                                        setFormData({
-                                            full_name: user.full_name || "",
-                                            phone_number: user.phone_number || "",
-                                            job_title: user.job_title || "",
-                                        });
-                                    }
-                                }}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" className="bg-[#1e293b] hover:bg-[#0f172a]" disabled={loading}>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Correo Electrónico Institucional</Label>
+                            <Input id="email" type="email" value={user?.email || ""} disabled />
+                        </div>
+
+                        <div className="flex justify-end gap-4 pt-2">
+                            <Button type="submit" disabled={loading}>
                                 {loading ? "Guardando..." : "Guardar Cambios"}
                             </Button>
                         </div>
                     </form>
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+function TeamSection() {
+    const { user } = useAuthStore();
+    const isOwner = user?.role === "owner";
+    const [members, setMembers] = useState<TeamMember[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    const [createForm, setCreateForm] = useState({
+        full_name: "",
+        email: "",
+        password: "",
+        job_title: "Abogado Asociado",
+        professional_license: "",
+        phone_number: "",
+    });
+
+    const [editForm, setEditForm] = useState({
+        full_name: "",
+        job_title: "",
+        professional_license: "",
+        phone_number: "",
+        new_password: "",
+    });
+
+    const loadMembers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getTeamMembers(true, API_URL);
+            setMembers(data);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al cargar los integrantes del despacho");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadMembers();
+    }, [loadMembers]);
+
+    const handleCreateMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (createForm.password.length < 8) {
+            toast.error("La contraseña temporal debe tener al menos 8 caracteres");
+            return;
+        }
+        setSubmitting(true);
+        try {
+            await createTeamMember(
+                {
+                    full_name: createForm.full_name.trim(),
+                    email: createForm.email.trim(),
+                    password: createForm.password,
+                    job_title: createForm.job_title.trim() || undefined,
+                    professional_license: createForm.professional_license.trim() || undefined,
+                    phone_number: createForm.phone_number.trim() || undefined,
+                },
+                API_URL
+            );
+            toast.success("Colaborador registrado en el despacho");
+            setIsCreateOpen(false);
+            setCreateForm({
+                full_name: "",
+                email: "",
+                password: "",
+                job_title: "Abogado Asociado",
+                professional_license: "",
+                phone_number: "",
+            });
+            loadMembers();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al registrar colaborador");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const openEditModal = (member: TeamMember) => {
+        setEditingMember(member);
+        setEditForm({
+            full_name: member.full_name || "",
+            job_title: member.job_title || "",
+            professional_license: member.professional_license || "",
+            phone_number: member.phone_number || "",
+            new_password: "",
+        });
+    };
+
+    const handleUpdateMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingMember) return;
+        if (editForm.new_password && editForm.new_password.length < 8) {
+            toast.error("La nueva contraseña debe tener al menos 8 caracteres");
+            return;
+        }
+        setSubmitting(true);
+        try {
+            await updateTeamMember(
+                editingMember.id,
+                {
+                    full_name: editForm.full_name.trim(),
+                    job_title: editForm.job_title.trim() || undefined,
+                    professional_license: editForm.professional_license.trim() || undefined,
+                    phone_number: editForm.phone_number.trim() || undefined,
+                    new_password: editForm.new_password || undefined,
+                },
+                API_URL
+            );
+            toast.success("Datos del colaborador actualizados");
+            setEditingMember(null);
+            loadMembers();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al actualizar colaborador");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleToggleActive = async (member: TeamMember) => {
+        try {
+            if (member.is_active) {
+                await deactivateTeamMember(member.id, API_URL);
+                toast.success(`${member.full_name} fue desactivado`);
+            } else {
+                await updateTeamMember(member.id, { is_active: true }, API_URL);
+                toast.success(`${member.full_name} fue reactivado`);
+            }
+            loadMembers();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo cambiar el estado del colaborador");
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Equipo y Colaboradores</h1>
+                    <p className="text-muted-foreground">
+                        Integra abogados asociados y pasantes para asignarles la atención y seguimiento de expedientes.
+                    </p>
+                </div>
+                {isOwner && (
+                    <Button onClick={() => setIsCreateOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Registrar Colaborador
+                    </Button>
+                )}
+            </div>
+            <Separator />
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">Directorio Jurídico del Despacho</CardTitle>
+                    <CardDescription>
+                        Los integrantes activos pueden consultar y gestionar expedientes del despacho y figurar como Abogado Responsable.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                    {loading ? (
+                        <div className="py-8 text-center text-muted-foreground">Cargando equipo...</div>
+                    ) : (
+                        <Table className="min-w-[680px]">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Integrante</TableHead>
+                                    <TableHead>Cargo / Rol</TableHead>
+                                    <TableHead>Cédula Profesional</TableHead>
+                                    <TableHead className="text-center">Expedientes</TableHead>
+                                    <TableHead>Estado</TableHead>
+                                    {isOwner && <TableHead className="text-right">Acciones</TableHead>}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {members.map((member) => (
+                                    <TableRow key={member.id}>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold">{member.full_name}</span>
+                                                <span className="text-xs text-muted-foreground">{member.email}</span>
+                                                {member.phone_number && (
+                                                    <span className="text-xs text-muted-foreground">{member.phone_number}</span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm">
+                                                    {member.job_title || (member.role === "owner" ? "Socio Titular" : "Colaborador")}
+                                                </span>
+                                                <Badge variant="outline" className="w-fit text-[11px]">
+                                                    {member.role === "owner" ? "Titular" : "Abogado / Pasante"}
+                                                </Badge>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {member.professional_license || (
+                                                <span className="text-muted-foreground italic text-xs">En trámite / N/A</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-center font-semibold">
+                                            {member.assigned_cases_count}
+                                        </TableCell>
+                                        <TableCell>
+                                            {member.is_active ? (
+                                                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-none">
+                                                    Activo
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary">Baja / Inactivo</Badge>
+                                            )}
+                                        </TableCell>
+                                        {isOwner && (
+                                            <TableCell className="text-right">
+                                                {member.role === "lawyer" ? (
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => openEditModal(member)}
+                                                            title="Editar datos"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleToggleActive(member)}
+                                                            title={member.is_active ? "Dar de baja" : "Reactivar"}
+                                                        >
+                                                            {member.is_active ? (
+                                                                <UserX className="h-4 w-4 text-destructive" />
+                                                            ) : (
+                                                                <UserCheck className="h-4 w-4 text-emerald-600" />
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">Cuenta Titular</span>
+                                                )}
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Modal Registrar Colaborador */}
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Registrar Abogado Colaborador o Pasante</DialogTitle>
+                        <DialogDescription>
+                            Crea una cuenta de acceso para un integrante de tu despacho jurídico.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateMember} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="col-name">Nombre Completo *</Label>
+                            <Input
+                                id="col-name"
+                                placeholder="Ej: Lic. Mariana Ortiz Gómez"
+                                value={createForm.full_name}
+                                onChange={(e) => setCreateForm({ ...createForm, full_name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="col-email">Correo Electrónico *</Label>
+                            <Input
+                                id="col-email"
+                                type="email"
+                                placeholder="mariana.ortiz@despacho.mx"
+                                value={createForm.email}
+                                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="col-pass">Contraseña Inicial *</Label>
+                            <Input
+                                id="col-pass"
+                                type="password"
+                                placeholder="Mínimo 8 caracteres"
+                                value={createForm.password}
+                                onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label htmlFor="col-title">Cargo</Label>
+                                <Input
+                                    id="col-title"
+                                    placeholder="Abogado Asociado / Pasante"
+                                    value={createForm.job_title}
+                                    onChange={(e) => setCreateForm({ ...createForm, job_title: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="col-ced">Cédula Profesional</Label>
+                                <Input
+                                    id="col-ced"
+                                    placeholder="Opcional si es pasante"
+                                    value={createForm.professional_license}
+                                    onChange={(e) =>
+                                        setCreateForm({ ...createForm, professional_license: e.target.value })
+                                    }
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="col-phone">Teléfono</Label>
+                            <Input
+                                id="col-phone"
+                                placeholder="Ej: 55 9876 5432"
+                                value={createForm.phone_number}
+                                onChange={(e) => setCreateForm({ ...createForm, phone_number: e.target.value })}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={submitting}>
+                                {submitting ? "Registrando..." : "Agregar al Despacho"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal Editar Colaborador */}
+            <Dialog open={!!editingMember} onOpenChange={() => setEditingMember(null)}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Editar Colaborador</DialogTitle>
+                        <DialogDescription>
+                            Actualiza la información profesional o restablece la contraseña de acceso.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateMember} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Nombre Completo *</Label>
+                            <Input
+                                value={editForm.full_name}
+                                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label>Cargo</Label>
+                                <Input
+                                    value={editForm.job_title}
+                                    onChange={(e) => setEditForm({ ...editForm, job_title: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Cédula Profesional</Label>
+                                <Input
+                                    value={editForm.professional_license}
+                                    onChange={(e) =>
+                                        setEditForm({ ...editForm, professional_license: e.target.value })
+                                    }
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Teléfono</Label>
+                            <Input
+                                value={editForm.phone_number}
+                                onChange={(e) => setEditForm({ ...editForm, phone_number: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Nueva Contraseña (opcional)</Label>
+                            <Input
+                                type="password"
+                                placeholder="Dejar en blanco para conservar la actual"
+                                value={editForm.new_password}
+                                onChange={(e) => setEditForm({ ...editForm, new_password: e.target.value })}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setEditingMember(null)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit" disabled={submitting}>
+                                {submitting ? "Guardando..." : "Guardar Cambios"}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -321,30 +842,24 @@ function SecuritySection() {
             toast.error("Las contraseñas no coinciden");
             return;
         }
-
         if (formData.new_password.length < 8) {
             toast.error("La contraseña debe tener al menos 8 caracteres");
             return;
         }
 
         setLoading(true);
-
         try {
-            const { changePassword } = await import("@/app/lib/api");
-            const apiUrl = useAuthStore.getState().url;
-            await changePassword({
-                current_password: formData.current_password,
-                new_password: formData.new_password,
-            }, apiUrl);
-
+            await changePassword(
+                {
+                    current_password: formData.current_password,
+                    new_password: formData.new_password,
+                },
+                API_URL
+            );
             toast.success("Contraseña actualizada correctamente");
-            setFormData({
-                current_password: "",
-                new_password: "",
-                confirm_password: "",
-            });
-        } catch {
-            toast.error("No se pudo actualizar la contraseña. Inténtalo de nuevo.");
+            setFormData({ current_password: "", new_password: "", confirm_password: "" });
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo actualizar la contraseña.");
         } finally {
             setLoading(false);
         }
@@ -354,17 +869,17 @@ function SecuritySection() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Seguridad</h1>
-                <p className="text-muted-foreground">Gestiona tu contraseña y configuración de seguridad.</p>
+                <p className="text-muted-foreground">Protege tu acceso al sistema y el secreto profesional de tus asuntos.</p>
             </div>
             <Separator />
 
             <Card>
                 <CardHeader>
                     <CardTitle>Cambiar Contraseña</CardTitle>
-                    <CardDescription>Actualiza tu contraseña para mantener tu cuenta segura.</CardDescription>
+                    <CardDescription>Actualiza periódicamente tu contraseña de acceso.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
                         <div className="space-y-2">
                             <Label htmlFor="current_password">Contraseña Actual</Label>
                             <Input
@@ -384,7 +899,7 @@ function SecuritySection() {
                                 onChange={(e) => setFormData({ ...formData, new_password: e.target.value })}
                                 required
                             />
-                            <p className="text-sm text-muted-foreground">Mínimo 8 caracteres</p>
+                            <p className="text-xs text-muted-foreground">Mínimo 8 caracteres</p>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="confirm_password">Confirmar Nueva Contraseña</Label>
@@ -397,21 +912,8 @@ function SecuritySection() {
                             />
                         </div>
 
-                        <div className="flex justify-end gap-4 pt-4">
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() =>
-                                    setFormData({
-                                        current_password: "",
-                                        new_password: "",
-                                        confirm_password: "",
-                                    })
-                                }
-                            >
-                                Cancelar
-                            </Button>
-                            <Button type="submit" className="bg-[#1e293b] hover:bg-[#0f172a]" disabled={loading}>
+                        <div className="flex justify-end gap-4 pt-2">
+                            <Button type="submit" disabled={loading}>
                                 {loading ? "Actualizando..." : "Actualizar Contraseña"}
                             </Button>
                         </div>
@@ -429,12 +931,10 @@ function SubscriptionSection() {
     const handleUpgrade = async () => {
         setLoading(true);
         try {
-            const apiUrl = useAuthStore.getState().url;
-            const { checkout_url } = await createCheckoutSession(apiUrl);
+            const { checkout_url } = await createCheckoutSession(API_URL);
             window.location.href = checkout_url;
         } catch (error) {
-            console.error("Error:", error);
-            toast.error("No se pudo iniciar el proceso de actualización");
+            toast.error(error instanceof Error ? error.message : "No se pudo iniciar la suscripción");
             setLoading(false);
         }
     };
@@ -442,30 +942,38 @@ function SubscriptionSection() {
     const handleManageSubscription = async () => {
         setLoading(true);
         try {
-            const apiUrl = useAuthStore.getState().url;
-            const { portal_url } = await createCustomerPortalSession(apiUrl);
+            const { portal_url } = await createCustomerPortalSession(API_URL);
             window.location.href = portal_url;
         } catch (error) {
-            console.error("Error:", error);
-            toast.error("No se pudo abrir el portal de gestión");
+            toast.error(error instanceof Error ? error.message : "No se pudo abrir el portal de gestión");
             setLoading(false);
         }
     };
 
     const plans = [
         {
-            name: "Free",
+            name: "Plan Inicial (Gratuito)",
             price: "$0",
-            period: "gratis",
-            features: ["1 usuario", "Hasta 5 casos", "Almacenamiento básico", "Soporte por email"],
+            period: "mes",
+            features: [
+                "Hasta 2 integrantes en el despacho",
+                "Hasta 5 clientes activos",
+                "Hasta 3 expedientes en trámite",
+                "500 MB de archivo digital y Portal del Cliente",
+            ],
             current: user?.subscription_plan === "free",
         },
         {
-            name: "Solo",
-            price: "$400",
-            period: "mes",
-            features: ["1 usuario", "Casos ilimitados", "10 GB almacenamiento", "Soporte prioritario", "Reportes básicos"],
-            current: user?.subscription_plan === "solo",
+            name: "Plan Profesional / Despacho",
+            price: "$499",
+            period: "mes MXN",
+            features: [
+                "Colaboradores y expedientes ampliados",
+                "Clientes ilimitados y Portal del Cliente",
+                "10 GB+ para promociones, acuerdos y pruebas",
+                "Estados de cuenta y alertas de términos fatales",
+            ],
+            current: user?.subscription_plan === "solo" || user?.subscription_plan === "firm",
             popular: true,
         },
     ];
@@ -473,63 +981,57 @@ function SubscriptionSection() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Suscripción</h1>
-                <p className="text-muted-foreground">Gestiona tu plan y facturación.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Suscripción del Despacho</h1>
+                <p className="text-muted-foreground">Consulta la capacidad contratada de tu firma jurídica.</p>
             </div>
             <Separator />
 
-            {/* Current Plan Status */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Plan Actual</CardTitle>
+                    <CardTitle>Estado Actual</CardTitle>
                     <CardDescription>
-                        Estás en el plan <span className="font-semibold capitalize">{user?.subscription_plan}</span> -{" "}
-                        Estado: <span className="font-semibold capitalize">{user?.subscription_status}</span>
+                        Plan activo: <span className="font-semibold uppercase">{user?.subscription_plan}</span> •{" "}
+                        Estatus: <span className="font-semibold capitalize">{user?.subscription_status}</span>
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
-                    {user?.subscription_plan !== "free" && (
+                {user?.subscription_plan !== "free" && (
+                    <CardContent>
                         <Button onClick={handleManageSubscription} disabled={loading} variant="outline">
-                            Gestionar Suscripción
+                            Administrar método de pago en Stripe
                         </Button>
-                    )}
-                </CardContent>
+                    </CardContent>
+                )}
             </Card>
 
-            {/* Plans */}
             <div className="grid gap-6 md:grid-cols-2">
                 {plans.map((plan) => (
-                    <Card key={plan.name} className={plan.popular ? "border-primary shadow-lg" : ""}>
+                    <Card key={plan.name} className={plan.popular ? "border-primary shadow-md" : ""}>
                         <CardHeader>
                             {plan.popular && (
-                                <div className="text-xs font-semibold text-primary mb-2">MÁS POPULAR</div>
+                                <div className="text-xs font-semibold text-primary mb-1 uppercase">Recomendado</div>
                             )}
-                            <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                            <div className="mt-4">
-                                <span className="text-4xl font-bold">{plan.price}</span>
-                                <span className="text-muted-foreground">/{plan.period}</span>
+                            <CardTitle className="text-xl">{plan.name}</CardTitle>
+                            <div className="mt-2">
+                                <span className="text-3xl font-bold">{plan.price}</span>
+                                <span className="text-muted-foreground text-sm"> / {plan.period}</span>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <ul className="space-y-2">
                                 {plan.features.map((feature, index) => (
                                     <li key={index} className="flex items-start gap-2">
-                                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
                                         <span className="text-sm">{feature}</span>
                                     </li>
                                 ))}
                             </ul>
                             {plan.current ? (
-                                <Button className="w-full" disabled>
-                                    Plan Actual
+                                <Button className="w-full" disabled variant="secondary">
+                                    Plan Activo
                                 </Button>
                             ) : (
-                                <Button
-                                    className="w-full bg-[#1e293b] hover:bg-[#0f172a]"
-                                    onClick={handleUpgrade}
-                                    disabled={loading}
-                                >
-                                    {plan.name === "Free" ? "Cambiar a Free" : "Actualizar"}
+                                <Button className="w-full" onClick={handleUpgrade} disabled={loading}>
+                                    Actualizar Plan
                                 </Button>
                             )}
                         </CardContent>

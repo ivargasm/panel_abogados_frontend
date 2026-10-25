@@ -1,567 +1,762 @@
-// lib/api.ts
-// Este archivo centraliza todas las llamadas a la API de FastAPI.
-// Ahora importa los tipos desde un archivo centralizado para mayor orden y mantenibilidad.
+// lib/api.tsx
+// Cliente centralizado de comunicación con la API de FastAPI.
 
-import type { ClientData, CaseData, CaseUpdateData, InitiateUploadResponse, Document, CalendarEventData, ClientInviteData, AcceptInvitationData, InvitationDetails, ClientCaseDetail, CaseSummary, CaseUpdateStatus, Invoice, InvoiceData, PaymentData, PresignedURLResponse } from "@/app/types"; // Importamos los tipos
+import type {
+    ClientData,
+    CaseData,
+    CaseUpdateData,
+    InitiateUploadResponse,
+    Document,
+    CalendarEventData,
+    ClientInviteData,
+    AcceptInvitationData,
+    InvitationDetails,
+    ClientCaseDetail,
+    CaseSummary,
+    CaseUpdateStatus,
+    Invoice,
+    InvoiceData,
+    PaymentData,
+    PresignedURLResponse,
+    TeamMember,
+    ConflictCheckResult,
+} from "@/app/types";
+
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
+
+async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+    try {
+        const data = await res.json();
+        if (typeof data?.detail === "string") return data.detail;
+        if (Array.isArray(data?.detail) && data.detail.length > 0) {
+            return data.detail.map((d: { msg?: string }) => d.msg || "").filter(Boolean).join(", ") || fallback;
+        }
+    } catch {
+        // Ignorar si no es JSON
+    }
+    return fallback;
+}
 
 // --- API de Autenticación ---
 
-export const fetchUser = async (url: string) => {
-    const res = await fetch(`${url}/auth/me`, { credentials: 'include' });
-    if (!res.ok) throw new Error("Login failed");;
+export const fetchUser = async (url: string = API_URL) => {
+    const res = await fetch(`${url}/auth/me`, { credentials: "include" });
+    if (!res.ok) throw new Error("No autenticado");
     return res.json();
 };
 
-
-export const login = async (email: string, password: string, url: string) => {
+export const login = async (email: string, password: string, url: string = API_URL) => {
     const res = await fetch(`${url}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error('Credenciales incorrectas');
-    return res;
-};
-
-export const logout = async (url: string) => {
-    const res = await fetch(`${url}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-    });
-    if (!res.ok) throw new Error('Error al cerrar sesión');
-    return res;
-};
-
-export async function register(username: string, email: string, password: string, url: string) {
-    try {
-        const res = await fetch(`${url}/auth/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email, password }),
-        });
-
-        return res.json();
-    } catch (error) {
-        console.error("Error en el registro:", error);
-        return false;
+    if (!res.ok) {
+        const msg = await extractErrorMessage(res, "Credenciales incorrectas");
+        throw new Error(msg);
     }
+    return res;
+};
+
+export const logout = async (url: string = API_URL) => {
+    const res = await fetch(`${url}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error("Error al cerrar sesión");
+    return res;
+};
+
+export async function register(
+    username: string,
+    email: string,
+    password: string,
+    url: string = API_URL,
+    extras?: { workspace_name?: string; professional_license?: string }
+) {
+    const res = await fetch(`${url}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            username,
+            full_name: username,
+            email,
+            password,
+            workspace_name: extras?.workspace_name,
+            professional_license: extras?.professional_license,
+        }),
+    });
+
+    if (!res.ok) {
+        const msg = await extractErrorMessage(res, "No se pudo completar el registro");
+        throw new Error(msg);
+    }
+
+    return res.json();
 }
 
-export async function forgot_password(url: string, email: string) {
+export async function forgot_password(url: string = API_URL, email: string) {
     const res = await fetch(`${url}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
     });
 
-    if (!res.ok) throw new Error('Error al enviar el correo');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al enviar el correo"));
     return res;
 }
 
-export async function reset_password(url: string, new_password: string, token: string) {
+export async function reset_password(url: string = API_URL, new_password: string, token: string) {
     const res = await fetch(`${url}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password }),
     });
 
-    if (!res.ok) throw new Error('Error al resetear la contraseña');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al restablecer la contraseña"));
     return res;
 }
 
-export async function updateUserProfile(profileData: { full_name?: string; phone_number?: string; job_title?: string; profile_picture_url?: string }, url: string) {
+export async function updateUserProfile(
+    profileData: {
+        full_name?: string;
+        phone_number?: string;
+        job_title?: string;
+        professional_license?: string;
+        profile_picture_url?: string;
+    },
+    url: string = API_URL
+) {
     const res = await fetch(`${url}/auth/me`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(profileData),
     });
-    if (!res.ok) throw new Error('Error al actualizar el perfil');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el perfil"));
     return res.json();
 }
 
-export async function changePassword(passwordData: { current_password: string; new_password: string }, url: string) {
+export async function changePassword(
+    passwordData: { current_password: string; new_password: string },
+    url: string = API_URL
+) {
     const res = await fetch(`${url}/auth/change-password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(passwordData),
     });
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || 'Error al cambiar la contraseña');
+        throw new Error(await extractErrorMessage(res, "Error al cambiar la contraseña"));
     }
     return res.json();
 }
 
-export async function initiateProfilePictureUpload(fileName: string, fileType: string, fileSize: number, url: string): Promise<PresignedURLResponse> {
+export async function initiateProfilePictureUpload(
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+    url: string = API_URL
+): Promise<PresignedURLResponse> {
     const res = await fetch(`${url}/auth/profile-picture/initiate-upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ file_name: fileName, file_type: fileType, file_size_bytes: fileSize }),
     });
-    if (!res.ok) throw new Error('No se pudo iniciar la subida de la foto de perfil');
+    if (!res.ok) throw new Error("No se pudo iniciar la subida de la foto de perfil");
+    return res.json();
+}
+
+// --- API para Equipo / Colaboradores y Despacho ---
+
+export async function getTeamMembers(includeInactive = false, url: string = API_URL): Promise<TeamMember[]> {
+    const res = await fetch(`${url}/api/team?include_inactive=${includeInactive}`, {
+        credentials: "include",
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los integrantes del despacho"));
+    return res.json();
+}
+
+export async function createTeamMember(
+    memberData: {
+        full_name: string;
+        email: string;
+        password: string;
+        job_title?: string;
+        phone_number?: string;
+        professional_license?: string;
+    },
+    url: string = API_URL
+): Promise<TeamMember> {
+    const res = await fetch(`${url}/api/team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(memberData),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al registrar al colaborador"));
+    return res.json();
+}
+
+export async function updateTeamMember(
+    memberId: number,
+    updateData: {
+        full_name?: string;
+        job_title?: string;
+        phone_number?: string;
+        professional_license?: string;
+        is_active?: boolean;
+        new_password?: string;
+    },
+    url: string = API_URL
+): Promise<TeamMember> {
+    const res = await fetch(`${url}/api/team/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(updateData),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar al colaborador"));
+    return res.json();
+}
+
+export async function deactivateTeamMember(memberId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/team/${memberId}`, {
+        method: "DELETE",
+        credentials: "include",
+    });
+    if (!res.ok && res.status !== 204) {
+        throw new Error(await extractErrorMessage(res, "Error al dar de baja al colaborador"));
+    }
+    return res;
+}
+
+export async function updateWorkspaceName(name: string, url: string = API_URL): Promise<{ id: number; name: string }> {
+    const res = await fetch(`${url}/api/team/workspace`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el nombre del despacho"));
+    return res.json();
+}
+
+export async function checkConflictOfInterest(
+    name: string,
+    options?: { excludeClientId?: number; excludeCaseId?: number },
+    url: string = API_URL
+): Promise<ConflictCheckResult> {
+    const params = new URLSearchParams({ name });
+    if (options?.excludeClientId) params.set("exclude_client_id", String(options.excludeClientId));
+    if (options?.excludeCaseId) params.set("exclude_case_id", String(options.excludeCaseId));
+
+    const res = await fetch(`${url}/api/conflict-check?${params.toString()}`, {
+        credentials: "include",
+    });
+    if (!res.ok) return { has_conflict: false, client_matches: [], opposing_party_matches: [] };
     return res.json();
 }
 
 // --- API para Clientes (CRUD Completo) ---
 
-export async function getClients(url: string) {
-    const res = await fetch(`${url}/api/clients/`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener los clientes');
+export async function getClients(url: string = API_URL) {
+    const res = await fetch(`${url}/api/clients/`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los clientes"));
     return res.json();
 }
 
-export async function createClient(clientData: unknown, url: string) {
+export async function createClient(clientData: unknown, url: string = API_URL) {
     const res = await fetch(`${url}/api/clients/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(clientData),
     });
-    if (!res.ok && res.status === 409) throw new Error('Error al crear el cliente: Ya existe un cliente con ese correo electrónico');
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al crear el cliente"));
+    }
     return res.json();
 }
 
-export async function updateClient(clientId: number, clientData: ClientData, url: string) {
+export async function updateClient(clientId: number, clientData: ClientData, url: string = API_URL) {
     const res = await fetch(`${url}/api/clients/${clientId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(clientData),
     });
-    if (!res.ok) throw new Error('Error al actualizar el cliente');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el cliente"));
     return res.json();
 }
 
-export async function deleteClient(clientId: number, url: string) {
+export async function deleteClient(clientId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/clients/${clientId}`, {
-        method: 'DELETE',
-        credentials: 'include',
+        method: "DELETE",
+        credentials: "include",
     });
     if (!res.ok && res.status !== 204) {
-        // Si hay un error de validación (400), obtener el mensaje del backend
-        if (res.status === 400 || res.status === 409) {
-            const errorData = await res.json();
-            throw new Error(errorData.detail || 'Error al eliminar el cliente');
-        }
-        throw new Error('Error al eliminar el cliente');
+        throw new Error(await extractErrorMessage(res, "Error al eliminar el cliente"));
     }
     return res;
 }
 
 // --- API para Casos ---
 
-export async function getCases(url: string, clientId: number | null) {
-    const queryParams = clientId ? `?client_id=${clientId}` : '';
-    const res = await fetch(`${url}/api/cases/${queryParams}`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener los casos');
+export async function getCases(url: string = API_URL, clientId: number | null = null) {
+    const queryParams = clientId ? `?client_id=${clientId}` : "";
+    const res = await fetch(`${url}/api/cases/${queryParams}`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los expedientes"));
     return res.json();
 }
 
-export async function createCase(caseData: CaseData, url: string) {
+export async function createCase(caseData: CaseData, url: string = API_URL) {
     const res = await fetch(`${url}/api/cases/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(caseData),
     });
-    // crear diferentes errores 409, 403 con el mensaje que llega del backend
-    if (!res.ok && res.status === 409) throw new Error(`Error al crear el caso: ${await res.text()}`);
-    if (!res.ok && res.status === 403) throw new Error(`Error al crear el caso: ${await res.text()}`);
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al crear el expediente"));
+    }
     return res.json();
 }
 
-export async function updateCase(caseId: number, caseData: CaseData, url: string) {
+export async function updateCase(caseId: number, caseData: CaseData, url: string = API_URL) {
     const res = await fetch(`${url}/api/cases/${caseId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(caseData),
     });
-    if (!res.ok) throw new Error('Error al actualizar el caso');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el expediente"));
     return res.json();
 }
 
-export async function updateCaseStatus(caseId: number, status: string, url: string) {
+export async function updateCaseStatus(caseId: number, status: string, url: string = API_URL) {
     const res = await fetch(`${url}/api/cases/${caseId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ status }),
     });
-    if (!res.ok) throw new Error('Error al actualizar el status del caso');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar la etapa procesal"));
     return res.json();
 }
 
-export async function deleteCase(caseId: number, url: string) {
+export async function deleteCase(caseId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/cases/${caseId}`, {
-        method: 'DELETE',
-        credentials: 'include',
+        method: "DELETE",
+        credentials: "include",
     });
     if (!res.ok && res.status !== 204) {
-        // Si hay un error de validación (400), obtener el mensaje del backend
-        if (res.status === 400) {
-            const errorData = await res.json();
-            throw new Error(errorData.detail || 'Error al eliminar el caso');
-        }
-        throw new Error('Error al eliminar el caso');
+        throw new Error(await extractErrorMessage(res, "Error al archivar el expediente"));
     }
     return res;
 }
 
-// --- FUNCIONES ADICIONALES PARA DETALLE DE CASO ---
+// --- Detalle y Actuaciones de Expediente ---
 
-export async function getCaseById(caseId: number, url: string) {
-    const res = await fetch(`${url}/api/cases/${caseId}`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener los detalles del caso');
+export async function getCaseById(caseId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/cases/${caseId}`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los detalles del expediente"));
     return res.json();
 }
 
-export async function getCaseUpdates(caseId: number, url: string) {
-    const res = await fetch(`${url}/api/cases/${caseId}/updates`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener las actualizaciones del caso');
+export async function getCaseUpdates(caseId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/cases/${caseId}/updates`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener las actuaciones del expediente"));
     return res.json();
 }
 
-export async function createCaseUpdate(caseId: number, updateData: CaseUpdateData, url: string) {
+export async function createCaseUpdate(caseId: number, updateData: CaseUpdateData, url: string = API_URL) {
     const res = await fetch(`${url}/api/cases/${caseId}/updates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(updateData),
     });
-    if (!res.ok) throw new Error('Error al crear la actualización');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al registrar la actuación"));
     return res.json();
 }
 
-export async function updateCaseUpdateStatus(updateId: number, newStatus: CaseUpdateStatus, url: string) {
-    const res = await fetch(`${url}/api/cases/${updateId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+export async function updateCaseUpdateStatus(updateId: number, newStatus: CaseUpdateStatus, url: string = API_URL) {
+    const res = await fetch(`${url}/api/case-updates/${updateId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(newStatus),
     });
-    if (!res.ok) throw new Error('Error al actualizar la actualización');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al cambiar el estado de la actuación"));
     return res.json();
 }
 
-export async function updateCaseUpdate(updateId: number, updateData: CaseUpdateData, url: string) {
-    const res = await fetch(`${url}/api/cases/${updateId}/updates`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+export async function updateCaseUpdate(updateId: number, updateData: CaseUpdateData, url: string = API_URL) {
+    const res = await fetch(`${url}/api/case-updates/${updateId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(updateData),
     });
-    if (!res.ok) throw new Error('Error al actualizar la actualización');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar la actuación"));
     return res.json();
+}
+
+export async function deleteCaseUpdate(updateId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/case-updates/${updateId}`, {
+        method: "DELETE",
+        credentials: "include",
+    });
+    if (!res.ok && res.status !== 204) {
+        throw new Error(await extractErrorMessage(res, "Error al eliminar la actuación"));
+    }
+    return res;
 }
 
 // --- API para Documentos ---
 
-export async function getDocumentsForCase(caseId: number, url: string): Promise<Document[]> {
-    const res = await fetch(`${url}/api/cases/${caseId}/documents`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener los documentos del caso');
+export async function getDocumentsForCase(caseId: number, url: string = API_URL): Promise<Document[]> {
+    const res = await fetch(`${url}/api/cases/${caseId}/documents`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los documentos del expediente"));
     return res.json();
 }
 
-export async function initiateUpload(caseId: number, fileName: string, fileType: string, fileSize: number, url: string): Promise<InitiateUploadResponse> {
+export async function initiateUpload(
+    caseId: number,
+    fileName: string,
+    fileType: string,
+    fileSize: number,
+    url: string = API_URL,
+    visibleToClient = false
+): Promise<InitiateUploadResponse> {
     const res = await fetch(`${url}/api/cases/${caseId}/documents/initiate-upload`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ file_name: fileName, file_type: fileType, file_size_bytes: fileSize }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+            file_name: fileName,
+            file_type: fileType,
+            file_size_bytes: fileSize,
+            visible_to_client: visibleToClient,
+        }),
     });
-    if (!res.ok) throw new Error('No se pudo iniciar la subida del archivo');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "No se pudo iniciar la subida del documento"));
     return res.json();
 }
 
 export async function uploadFileToS3(uploadUrl: string, file: File) {
     const res = await fetch(uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
-        headers: {
-            'Content-Type': file.type,
-        },
+        headers: file.type ? { "Content-Type": file.type } : undefined,
     });
-    if (!res.ok) throw new Error('Error al subir el archivo a S3');
+    if (!res.ok) throw new Error("Error al transferir el archivo al almacenamiento");
     return res;
 }
 
-export async function getDownloadUrl(documentId: number, url: string): Promise<{ download_url: string }> {
-    const res = await fetch(`${url}/api/documents/${documentId}/download-url`, { credentials: 'include' });
-    if (!res.ok) throw new Error('No se pudo obtener el enlace de descarga');
+export async function getDownloadUrl(documentId: number, url: string = API_URL): Promise<{ download_url: string }> {
+    const res = await fetch(`${url}/api/documents/${documentId}/download-url`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "No se pudo obtener el enlace de descarga"));
     return res.json();
+}
+
+export async function toggleDocumentVisibility(
+    documentId: number,
+    visibleToClient: boolean,
+    url: string = API_URL
+): Promise<Document> {
+    const res = await fetch(`${url}/api/documents/${documentId}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ visible_to_client: visibleToClient }),
+    });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "No se pudo actualizar la visibilidad del documento"));
+    return res.json();
+}
+
+export async function deleteDocument(documentId: number, url: string = API_URL) {
+    const res = await fetch(`${url}/api/documents/${documentId}`, {
+        method: "DELETE",
+        credentials: "include",
+    });
+    if (!res.ok && res.status !== 204) {
+        throw new Error(await extractErrorMessage(res, "No se pudo eliminar el documento"));
+    }
+    return res;
 }
 
 // --- API para Calendario ---
 
-export async function getCalendarEvents(start: string, end: string, url: string, caseId: number | null) {
-    // Construimos la URL con los query parameters que espera el backend
+export async function getCalendarEvents(
+    start: string,
+    end: string,
+    url: string = API_URL,
+    caseId: number | null = null
+) {
     const params = new URLSearchParams({ start, end });
-
-    // Si se seleccionó un caso, lo añadimos como parámetro
     if (caseId) {
-        params.append('case_id', String(caseId));
+        params.append("case_id", String(caseId));
     }
 
-    const res = await fetch(`${url}/api/calendar-events/?${params}`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener los eventos del calendario');
+    const res = await fetch(`${url}/api/calendar-events/?${params}`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los eventos de la agenda"));
     return res.json();
 }
 
-export async function createCalendarEvent(eventData: CalendarEventData, url: string) {
+export async function createCalendarEvent(eventData: CalendarEventData, url: string = API_URL) {
     const res = await fetch(`${url}/api/calendar-events/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(eventData),
     });
-    if (!res.ok) throw new Error('Error al crear el evento');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al crear el evento"));
     return res.json();
 }
 
-export async function updateCalendarEvent(eventId: number, eventData: Partial<CalendarEventData>, url: string) {
+export async function updateCalendarEvent(eventId: number, eventData: Partial<CalendarEventData>, url: string = API_URL) {
     const res = await fetch(`${url}/api/calendar-events/${eventId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(eventData),
     });
-    if (!res.ok) throw new Error('Error al actualizar el evento');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al actualizar el evento"));
     return res.json();
 }
 
-export async function deleteCalendarEvent(eventId: number, url: string) {
+export async function deleteCalendarEvent(eventId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/calendar-events/${eventId}`, {
-        method: 'DELETE',
-        credentials: 'include',
+        method: "DELETE",
+        credentials: "include",
     });
     if (!res.ok && res.status !== 204) {
-        throw new Error('Error al eliminar el evento');
+        throw new Error(await extractErrorMessage(res, "Error al eliminar el evento"));
     }
     return res;
 }
 
-export async function downloadCalendarEventIcs(eventId: number, url: string) {
+export async function downloadCalendarEventIcs(eventId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/calendar-events/${eventId}/download`, {
-        credentials: 'include',
+        credentials: "include",
     });
 
     if (!res.ok) {
-        throw new Error('No se pudo descargar el evento del calendario');
+        throw new Error("No se pudo exportar el evento en formato iCalendar (.ics)");
     }
 
-    // Obtener el nombre del archivo del header 'Content-Disposition'
-    const disposition = res.headers.get('Content-Disposition');
-    let filename = 'evento.ics'; // Nombre por defecto
-    if (disposition && disposition.includes('attachment')) {
+    const disposition = res.headers.get("Content-Disposition");
+    let filename = "evento_juridico.ics";
+    if (disposition && disposition.includes("attachment")) {
         const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
         const matches = filenameRegex.exec(disposition);
         if (matches?.[1]) {
-            filename = matches[1].replace(/['"]/g, '');
+            filename = matches[1].replace(/['"]/g, "");
         }
     }
 
-    // Crear un enlace temporal para iniciar la descarga del archivo
     const blob = await res.blob();
     const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = downloadUrl;
-    link.setAttribute('download', filename);
+    link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
 
-    // Limpiar el enlace temporal
     link.parentNode?.removeChild(link);
     window.URL.revokeObjectURL(downloadUrl);
 }
 
 // --- API para Invitaciones de Clientes ---
 
-export async function inviteClient(caseId: number, inviteData: ClientInviteData, url: string) {
-    const res = await fetch(`${url}/api/cases/${caseId}/invite-client`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(inviteData),
+export async function inviteClient(clientId: number, _inviteData?: ClientInviteData, url: string = API_URL) {
+    const res = await fetch(`${url}/api/clients/${clientId}/invite`, {
+        method: "POST",
+        credentials: "include",
     });
     if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || 'Error al enviar la invitación');
+        throw new Error(await extractErrorMessage(res, "Error al enviar la invitación"));
     }
     return res.json();
 }
 
-export async function getInvitationDetails(token: string, url: string): Promise<InvitationDetails> {
+export async function getInvitationDetails(token: string, url: string = API_URL): Promise<InvitationDetails> {
     const res = await fetch(`${url}/api/invitations/${token}`);
     if (!res.ok) {
-        throw new Error('Invitación no válida o expirada');
+        throw new Error(await extractErrorMessage(res, "Invitación no válida o expirada"));
     }
     return res.json();
 }
 
-export async function acceptInvitation(data: AcceptInvitationData, url: string) {
+export async function acceptInvitation(data: AcceptInvitationData, url: string = API_URL) {
     const res = await fetch(`${url}/api/invitations/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
     });
     if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || 'No se pudo crear la cuenta');
+        throw new Error(await extractErrorMessage(res, "No se pudo activar la cuenta"));
     }
     return res.json();
 }
 
 // --- API para Portal del Cliente ---
 
-export async function getMyCases(url: string): Promise<CaseSummary[]> {
-    // El backend ya sabe qué cliente es por la cookie de sesión.
-    const res = await fetch(`${url}/api/portal/my-cases`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener tus casos');
+export async function getMyCases(url: string = API_URL): Promise<CaseSummary[]> {
+    const res = await fetch(`${url}/api/portal/my-cases`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener tus expedientes"));
     return res.json();
 }
 
-export async function getMyCaseDetails(caseId: string, url: string): Promise<ClientCaseDetail> {
-    const res = await fetch(`${url}/api/portal/my-cases/${caseId}`, { credentials: 'include' });
+export async function getMyCaseDetails(caseId: string, url: string = API_URL): Promise<ClientCaseDetail> {
+    const res = await fetch(`${url}/api/portal/my-cases/${caseId}`, { credentials: "include" });
     if (!res.ok) {
-        if (res.status === 404) {
-            throw new Error('Caso no encontrado o no tienes permiso para verlo.');
-        }
-        throw new Error('Error al obtener los detalles del caso');
+        throw new Error(await extractErrorMessage(res, "Expediente no encontrado o sin permiso de acceso."));
     }
     return res.json();
 }
 
-/**
- * Llama al backend para crear una sesión de checkout de Stripe.
- * Devuelve la URL a la que se debe redirigir al usuario para pagar.
- */
-export async function createCheckoutSession(url: string): Promise<{ checkout_url: string }> {
+export async function getPortalCaseBilling(caseId: string | number, url: string = API_URL): Promise<Invoice[]> {
+    const res = await fetch(`${url}/api/portal/my-cases/${caseId}/billing`, { credentials: "include" });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "No se pudo consultar el estado de cuenta."));
+    }
+    return res.json();
+}
+
+export async function getPortalDocumentDownloadUrl(
+    caseId: string | number,
+    documentId: number,
+    url: string = API_URL
+): Promise<{ download_url: string; file_name?: string }> {
+    const res = await fetch(`${url}/api/portal/my-cases/${caseId}/documents/${documentId}/download-url`, {
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "No se pudo descargar el documento."));
+    }
+    return res.json();
+}
+
+// --- Suscripciones ---
+
+export async function createCheckoutSession(url: string = API_URL): Promise<{ checkout_url: string }> {
     const res = await fetch(`${url}/api/subscriptions/create-checkout-session`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
     });
     if (!res.ok) {
-        throw new Error('No se pudo iniciar la sesión de pago.');
+        throw new Error(await extractErrorMessage(res, "No se pudo iniciar la sesión de suscripción."));
     }
     return res.json();
 }
 
-/**
- * Llama al backend para crear una sesión del portal de cliente de Stripe.
- * Devuelve la URL a la que se debe redirigir al usuario para gestionar su suscripción.
- */
-export async function createCustomerPortalSession(url: string): Promise<{ portal_url: string }> {
+export async function createCustomerPortalSession(url: string = API_URL): Promise<{ portal_url: string }> {
     const res = await fetch(`${url}/api/subscriptions/create-customer-portal-session`, {
-        method: 'POST',
-        credentials: 'include',
+        method: "POST",
+        credentials: "include",
     });
     if (!res.ok) {
-        throw new Error('No se pudo abrir el portal de gestión.');
+        throw new Error(await extractErrorMessage(res, "No se pudo abrir el portal de suscripción."));
     }
     return res.json();
 }
 
-// --- API para Facturación ---
+// --- API para Facturación y Cobranza ---
 
-export async function getBillingStats(url: string) {
-    const res = await fetch(`${url}/api/billing/stats`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener las estadísticas de facturación');
+export async function getBillingStats(url: string = API_URL) {
+    const res = await fetch(`${url}/api/billing/stats`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener las métricas de cobranza"));
     return res.json();
 }
 
-export async function getInvoices(url: string): Promise<Invoice[]> {
-    const res = await fetch(`${url}/api/billing/invoices`, { credentials: 'include' });
-    if (!res.ok) throw new Error('Error al obtener las facturas');
+export async function getInvoices(url: string = API_URL): Promise<Invoice[]> {
+    const res = await fetch(`${url}/api/billing/invoices`, { credentials: "include" });
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al obtener los estados de cuenta"));
     return res.json();
 }
 
-export async function createInvoice(invoiceData: InvoiceData, url: string) {
-    const res = await fetch(`${url}/api/billing/invoices/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+export async function createInvoice(invoiceData: InvoiceData, url: string = API_URL) {
+    const res = await fetch(`${url}/api/billing/invoices`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(invoiceData),
     });
-    if (!res.ok) throw new Error('Error al crear la factura');
+    if (!res.ok) throw new Error(await extractErrorMessage(res, "Error al registrar el estado de cuenta"));
     return res.json();
 }
 
-export async function recordPayment(invoiceId: number, paymentData: PaymentData, url: string) {
+export async function recordPayment(invoiceId: number, paymentData: PaymentData, url: string = API_URL) {
     const res = await fetch(`${url}/api/billing/invoices/${invoiceId}/payments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(paymentData),
     });
     if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || 'Error al registrar el pago');
+        throw new Error(await extractErrorMessage(res, "Error al registrar el abono"));
     }
     return res.json();
 }
 
-export async function deleteInvoice(invoiceId: number, url: string) {
+export async function deleteInvoice(invoiceId: number, url: string = API_URL) {
     const res = await fetch(`${url}/api/billing/invoices/${invoiceId}`, {
-        method: 'DELETE',
-        credentials: 'include',
+        method: "DELETE",
+        credentials: "include",
     });
     if (!res.ok && res.status !== 204) {
-        // Si hay un error de validación (400), obtener el mensaje del backend
-        if (res.status === 400) {
-            const errorData = await res.json();
-            throw new Error(errorData.detail || 'Error al eliminar la factura');
-        }
-        throw new Error('Error al eliminar la factura');
+        throw new Error(await extractErrorMessage(res, "Error al eliminar el estado de cuenta"));
     }
     return res;
 }
 
-export async function reassignInvoice(invoiceId: number, caseId: number | null, url: string) {
+export async function reassignInvoice(invoiceId: number, caseId: number | null, url: string = API_URL) {
     const res = await fetch(`${url}/api/billing/invoices/${invoiceId}/reassign`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ case_id: caseId }),
     });
     if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.detail || 'Error al reasignar la factura');
+        throw new Error(await extractErrorMessage(res, "Error al vincular el estado de cuenta"));
     }
     return res.json();
 }
+
 // --- API de Dashboard ---
 
-export async function getDashboardStats(url: string) {
+export async function getDashboardStats(url: string = API_URL) {
     const res = await fetch(`${url}/api/dashboard/stats`, {
-        credentials: 'include',
+        credentials: "include",
     });
     if (!res.ok) {
-        throw new Error('Error al obtener estadísticas del dashboard');
+        throw new Error(await extractErrorMessage(res, "Error al obtener estadísticas del despacho"));
     }
     return res.json();
 }
 
-export async function getRecentActivity(url: string, limit: number = 10) {
+export async function getRecentActivity(url: string = API_URL, limit: number = 10) {
     const res = await fetch(`${url}/api/dashboard/recent-activity?limit=${limit}`, {
-        credentials: 'include',
+        credentials: "include",
     });
     if (!res.ok) {
-        throw new Error('Error al obtener actividad reciente');
+        throw new Error(await extractErrorMessage(res, "Error al obtener actividad reciente"));
     }
     return res.json();
 }
 
-export async function getUpcomingDeadlines(url: string, daysAhead: number = 30) {
+export async function getUpcomingDeadlines(url: string = API_URL, daysAhead: number = 30) {
     const res = await fetch(`${url}/api/dashboard/upcoming-deadlines?days_ahead=${daysAhead}`, {
-        credentials: 'include',
+        credentials: "include",
     });
     if (!res.ok) {
-        throw new Error('Error al obtener vencimientos próximos');
+        throw new Error(await extractErrorMessage(res, "Error al obtener términos próximos"));
     }
     return res.json();
 }

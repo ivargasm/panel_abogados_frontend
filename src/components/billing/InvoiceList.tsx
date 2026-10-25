@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -28,11 +27,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import RecordPaymentModal from "./RecordPaymentModal";
 import Link from "next/link";
-import { Search, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { deleteInvoice, reassignInvoice, getCases, getInvoices } from "@/app/lib/api";
+import { API_URL, deleteInvoice, reassignInvoice, getCases, getInvoices } from "@/app/lib/api";
 import { toast } from "sonner";
 import {
     AlertDialog,
@@ -52,51 +52,38 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import type { Invoice } from "@/app/types";
+import { formatCurrencyMXN } from "@/lib/legal-domain";
 
-interface Case {
+interface CaseOption {
     id: number;
     title: string;
 }
 
-interface Invoice {
-    id: number;
-    invoice_number: string;
-    amount: number;
-    balance_due: number;
-    status: string;
-    issue_date: string;
-    due_date: string;
-    client_id: number;
-    client?: {
-        full_name: string;
-        email?: string;
-    };
-    case?: {
-        title: string;
-    };
+interface InvoiceListProps {
+    onChanged?: () => void;
 }
 
-export default function InvoiceList() {
+export default function InvoiceList({ onChanged }: InvoiceListProps) {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
     const [statusFilter, setStatusFilter] = useState("all");
     const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
     const [invoiceToReassign, setInvoiceToReassign] = useState<Invoice | null>(null);
-    const [cases, setCases] = useState<Case[]>([]);
-    const [selectedCaseId, setSelectedCaseId] = useState<string>("");
+    const [cases, setCases] = useState<CaseOption[]>([]);
+    const [selectedCaseId, setSelectedCaseId] = useState<string>("none");
 
     const fetchInvoices = async (search = "") => {
         try {
-            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const data = await getInvoices(url);
-
-            // Filter locally by search term if provided
+            const data = await getInvoices(API_URL);
             if (search) {
-                const filtered = data.filter((invoice: Invoice) =>
-                    invoice.invoice_number?.toLowerCase().includes(search.toLowerCase()) ||
-                    invoice.client?.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-                    invoice.case?.title?.toLowerCase().includes(search.toLowerCase())
+                const q = search.toLowerCase();
+                const filtered = data.filter((invoice) =>
+                    invoice.invoice_number?.toLowerCase().includes(q) ||
+                    invoice.client?.full_name?.toLowerCase().includes(q) ||
+                    invoice.case?.title?.toLowerCase().includes(q) ||
+                    invoice.description?.toLowerCase().includes(q)
                 );
                 setInvoices(filtered);
             } else {
@@ -104,136 +91,131 @@ export default function InvoiceList() {
             }
         } catch (error) {
             console.error("Error fetching invoices:", error);
-            toast.error("Error al cargar las facturas");
+            toast.error("Error al cargar los estados de cuenta");
         }
     };
 
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             fetchInvoices(searchTerm);
-        }, 500);
-
+        }, 300);
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm]);
 
     const handleDeleteInvoice = async () => {
         if (!invoiceToDelete) return;
         try {
-            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            await deleteInvoice(invoiceToDelete.id, url);
-            toast.success("Factura eliminada exitosamente");
+            await deleteInvoice(invoiceToDelete.id, API_URL);
+            toast.success("Estado de cuenta eliminado exitosamente");
             fetchInvoices(searchTerm);
+            onChanged?.();
             setInvoiceToDelete(null);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al eliminar la factura');
+            toast.error(err instanceof Error ? err.message : "Error al eliminar el estado de cuenta");
         }
     };
 
     const handleReassignInvoice = async () => {
         if (!invoiceToReassign) return;
         try {
-            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const caseId = selectedCaseId === "none" ? null : parseInt(selectedCaseId);
-            await reassignInvoice(invoiceToReassign.id, caseId, url);
-            toast.success("Factura reasignada exitosamente");
+            const caseId = selectedCaseId === "none" ? null : parseInt(selectedCaseId, 10);
+            await reassignInvoice(invoiceToReassign.id, caseId, API_URL);
+            toast.success("Estado de cuenta vinculado al expediente");
             fetchInvoices(searchTerm);
+            onChanged?.();
             setInvoiceToReassign(null);
-            setSelectedCaseId("");
+            setSelectedCaseId("none");
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Error al reasignar la factura');
+            toast.error(err instanceof Error ? err.message : "Error al vincular al expediente");
         }
     };
 
     const openReassignModal = async (invoice: Invoice) => {
         setInvoiceToReassign(invoice);
-        setSelectedCaseId(invoice.case?.title ? String(invoice.case) : "none");
-        // Fetch cases for the client
+        const currentCaseId = invoice.case_id ?? invoice.case?.id ?? null;
+        setSelectedCaseId(currentCaseId ? String(currentCaseId) : "none");
         try {
-            const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-            const clientCases = await getCases(url, invoice.client_id);
+            const clientCases = await getCases(API_URL, invoice.client_id);
             setCases(clientCases);
         } catch (error) {
             console.error("Error fetching cases:", error);
-            toast.error("Error al cargar los casos del cliente");
+            toast.error("Error al cargar los expedientes del cliente");
         }
     };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "paid":
-                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none shadow-none font-medium">Pagada</Badge>;
+                return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-none shadow-none font-medium">Liquidado</Badge>;
             case "partial":
-                return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-none shadow-none font-medium">Parcial</Badge>;
+                return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-none shadow-none font-medium">Pago Parcial</Badge>;
             case "sent":
-                return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none shadow-none font-medium">Enviada</Badge>;
+                return <Badge className="bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-none shadow-none font-medium">Pendiente</Badge>;
             case "overdue":
-                return <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-none shadow-none font-medium">Vencida</Badge>;
+                return <Badge className="bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border-none shadow-none font-medium">Vencido</Badge>;
             case "draft":
-                return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100 border-none shadow-none font-medium">Borrador</Badge>;
+                return <Badge variant="secondary" className="font-medium">Borrador</Badge>;
             default:
                 return <Badge variant="secondary" className="font-medium">{status}</Badge>;
         }
     };
 
-    // Filter invoices locally for now if backend doesn't support it
-    const filteredInvoices = invoices.filter(invoice => {
+    const filteredInvoices = invoices.filter((invoice) => {
         if (statusFilter === "all") return true;
         return invoice.status === statusFilter;
     });
 
     return (
-        <div className="space-y-4 bg-white p-4 rounded-lg border shadow-sm w-full max-w-[100vw] sm:max-w-full">
-            {/* Search and Filters */}
+        <div className="space-y-4 bg-card text-card-foreground p-4 rounded-lg border shadow-sm w-full max-w-[100vw] sm:max-w-full">
             <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
                 <div className="relative w-full lg:w-96">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Buscar por # Factura, Cliente o Caso..."
-                        className="pl-8 bg-gray-50 border-gray-200"
+                        placeholder="Buscar por folio, cliente, asunto o expediente..."
+                        className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-full sm:w-[140px] bg-gray-50 border-gray-200">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Estado: Todos" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Estado: Todos</SelectItem>
-                            <SelectItem value="paid">Pagada</SelectItem>
-                            <SelectItem value="overdue">Vencida</SelectItem>
-                            <SelectItem value="partial">Parcial</SelectItem>
-                            <SelectItem value="draft">Borrador</SelectItem>
+                            <SelectItem value="sent">Pendiente de Pago</SelectItem>
+                            <SelectItem value="partial">Pago Parcial</SelectItem>
+                            <SelectItem value="overdue">Vencido</SelectItem>
+                            <SelectItem value="paid">Liquidado</SelectItem>
                         </SelectContent>
                     </Select>
 
-                    <Button variant="outline" className="bg-gray-50 border-gray-200 text-gray-600 w-full sm:w-auto">
-                        Rango de Fechas
-                    </Button>
-
-                    <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 w-full sm:w-auto" onClick={() => {
-                        setSearchTerm("");
-                        setStatusFilter("all");
-                    }}>
-                        Limpiar Filtros
-                    </Button>
+                    {(searchTerm || statusFilter !== "all") && (
+                        <Button
+                            variant="ghost"
+                            className="w-full sm:w-auto"
+                            onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                            }}
+                        >
+                            Limpiar Filtros
+                        </Button>
+                    )}
                 </div>
             </div>
 
-            {/* Table */}
             <div className="rounded-md border overflow-x-auto w-full">
-                <Table className="min-w-[600px]">
-                    <TableHeader className="bg-gray-50">
+                <Table className="min-w-[700px]">
+                    <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead className="w-[40px]">
-                                <Checkbox />
-                            </TableHead>
-                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Nº Factura</TableHead>
+                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Folio</TableHead>
                             <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Cliente</TableHead>
-                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Caso</TableHead>
-                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Monto</TableHead>
-                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Fecha Vencimiento</TableHead>
+                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Expediente</TableHead>
+                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Total</TableHead>
+                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Saldo</TableHead>
+                            <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Vencimiento</TableHead>
                             <TableHead className="font-semibold text-xs text-muted-foreground uppercase tracking-wider">Estado</TableHead>
                             <TableHead className="text-right font-semibold text-xs text-muted-foreground uppercase tracking-wider">Acciones</TableHead>
                         </TableRow>
@@ -242,41 +224,41 @@ export default function InvoiceList() {
                         {filteredInvoices.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                                    No se encontraron facturas.
+                                    No se encontraron estados de cuenta registrados.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             filteredInvoices.map((invoice) => (
-                                <TableRow key={invoice.id} className="hover:bg-gray-50/50">
-                                    <TableCell>
-                                        <Checkbox />
-                                    </TableCell>
-                                    <TableCell className="font-medium text-blue-600">
+                                <TableRow key={invoice.id} className="hover:bg-muted/30">
+                                    <TableCell className="font-medium text-primary">
                                         <Link href={`/dashboard/billing/${invoice.id}`} className="hover:underline">
                                             {invoice.invoice_number}
                                         </Link>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-sm">
-                                                {invoice.client?.full_name || 'Cliente Desconocido'}
-                                            </span>
-                                        </div>
+                                        <span className="font-medium text-sm">
+                                            {invoice.client?.full_name || "Cliente"}
+                                        </span>
                                     </TableCell>
                                     <TableCell>
                                         {invoice.case ? (
-                                            <span className="text-sm text-gray-600">
+                                            <span className="text-sm text-muted-foreground line-clamp-1 max-w-[240px]">
                                                 {invoice.case.title}
                                             </span>
                                         ) : (
-                                            <span className="text-muted-foreground text-sm">-</span>
+                                            <span className="text-muted-foreground text-xs italic">Asesoría general</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="font-medium">
-                                        ${invoice.amount.toFixed(2)}
+                                        {formatCurrencyMXN(invoice.amount)}
                                     </TableCell>
-                                    <TableCell className="text-gray-600">
-                                        {format(new Date(invoice.due_date || invoice.issue_date), "yyyy-MM-dd")}
+                                    <TableCell className={invoice.balance_due > 0 ? "font-semibold text-amber-700 dark:text-amber-400" : "text-muted-foreground"}>
+                                        {formatCurrencyMXN(invoice.balance_due)}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground text-sm">
+                                        {invoice.due_date
+                                            ? format(new Date(invoice.due_date), "dd MMM yyyy", { locale: es })
+                                            : "Sin vencimiento"}
                                     </TableCell>
                                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                                     <TableCell className="text-right">
@@ -290,17 +272,19 @@ export default function InvoiceList() {
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                                 <DropdownMenuItem asChild>
-                                                    <Link href={`/dashboard/billing/${invoice.id}`}>Ver Detalles</Link>
+                                                    <Link href={`/dashboard/billing/${invoice.id}`}>Ver Estado de Cuenta / PDF</Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>
-                                                    Registrar Pago
-                                                </DropdownMenuItem>
+                                                {invoice.balance_due > 0 && (
+                                                    <DropdownMenuItem onClick={() => setSelectedInvoice(invoice)}>
+                                                        Registrar Abono
+                                                    </DropdownMenuItem>
+                                                )}
                                                 <DropdownMenuItem onClick={() => openReassignModal(invoice)}>
-                                                    Reasignar Caso
+                                                    Vincular a Expediente
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
-                                                    className="text-red-600"
+                                                    className="text-destructive"
                                                     onClick={() => setInvoiceToDelete(invoice)}
                                                 >
                                                     Eliminar
@@ -315,20 +299,10 @@ export default function InvoiceList() {
                 </Table>
             </div>
 
-            {/* Pagination (Mocked for visual completeness) */}
-            <div className="flex flex-col sm:flex-row items-center justify-between px-2 gap-4">
-                <div className="text-sm text-muted-foreground text-center sm:text-left">
-                    Mostrando 1 a {filteredInvoices.length} de {filteredInvoices.length} facturas
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="icon" disabled>
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <div className="text-sm font-medium">1 / 1</div>
-                    <Button variant="outline" size="icon" disabled>
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
+            <div className="flex items-center justify-between px-2 text-xs text-muted-foreground">
+                <span>
+                    Mostrando {filteredInvoices.length} de {invoices.length} estado(s) de cuenta
+                </span>
             </div>
 
             {selectedInvoice && (
@@ -337,19 +311,18 @@ export default function InvoiceList() {
                     isOpen={!!selectedInvoice}
                     onClose={() => {
                         setSelectedInvoice(null);
-                        fetchInvoices();
+                        fetchInvoices(searchTerm);
+                        onChanged?.();
                     }}
                 />
             )}
 
-            {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!invoiceToDelete} onOpenChange={() => setInvoiceToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar factura?</AlertDialogTitle>
+                        <AlertDialogTitle>¿Eliminar estado de cuenta?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción eliminará permanentemente la factura {invoiceToDelete?.invoice_number}.
-                            Esta acción no se puede deshacer.
+                            Se eliminará permanentemente el folio {invoiceToDelete?.invoice_number} y sus abonos asociados.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -361,21 +334,20 @@ export default function InvoiceList() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            {/* Reassign Dialog */}
             <Dialog open={!!invoiceToReassign} onOpenChange={() => setInvoiceToReassign(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Reasignar Factura a Otro Caso</DialogTitle>
+                        <DialogTitle>Vincular Estado de Cuenta a un Expediente</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="case">Caso</Label>
+                            <Label htmlFor="case">Expediente del Cliente</Label>
                             <Select value={selectedCaseId} onValueChange={setSelectedCaseId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona un caso..." />
+                                    <SelectValue placeholder="Selecciona un expediente..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">Sin caso asignado</SelectItem>
+                                    <SelectItem value="none">Asesoría general (sin expediente)</SelectItem>
                                     {cases.map((caseItem) => (
                                         <SelectItem key={caseItem.id} value={String(caseItem.id)}>
                                             {caseItem.title}
@@ -390,7 +362,7 @@ export default function InvoiceList() {
                             Cancelar
                         </Button>
                         <Button onClick={handleReassignInvoice}>
-                            Reasignar
+                            Guardar Vínculo
                         </Button>
                     </DialogFooter>
                 </DialogContent>

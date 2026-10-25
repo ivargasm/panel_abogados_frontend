@@ -1,66 +1,85 @@
 // app/components/NavLinks.tsx
-// Este componente de cliente se encarga de renderizar la barra de navegación lateral.
-
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Briefcase, LayoutDashboard, Settings, User, Calendar, Zap, BadgeDollarSign } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+    Briefcase,
+    LayoutDashboard,
+    Settings,
+    Users,
+    Calendar,
+    Zap,
+    BadgeDollarSign,
+    Scale,
+} from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+export const DASHBOARD_NAV_LINKS = [
+    { href: "/dashboard", label: "Resumen General", icon: LayoutDashboard },
+    { href: "/dashboard/clients", label: "Clientes", icon: Users },
+    { href: "/dashboard/cases", label: "Expedientes", icon: Briefcase },
+    { href: "/dashboard/calendar", label: "Agenda Procesal", icon: Calendar },
+    { href: "/dashboard/billing", label: "Honorarios y Cobranza", icon: BadgeDollarSign },
+    { href: "/dashboard/subscription", label: "Plan del Despacho", icon: Zap },
+];
 
 export default function NavLinks() {
     const pathname = usePathname();
 
-    const links = [
-        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/dashboard/clients', label: 'Clientes', icon: User },
-        { href: '/dashboard/cases', label: 'Casos', icon: Briefcase },
-        { href: '/dashboard/calendar', label: 'Calendario', icon: Calendar },
-        { href: '/dashboard/billing', label: 'Facturación', icon: BadgeDollarSign },
-        { href: '/dashboard/subscription', label: 'Suscripción', icon: Zap },
-    ];
+    const isActive = (href: string) => {
+        if (href === "/dashboard") return pathname === "/dashboard";
+        return pathname === href || pathname?.startsWith(`${href}/`);
+    };
 
     return (
-        <TooltipProvider>
-            <nav className="flex flex-col items-center gap-4 px-2 sm:py-5 mt-18">
+        <TooltipProvider delayDuration={150}>
+            <nav className="flex h-full flex-col items-center gap-3 px-2 py-5">
                 <Link
                     href="/dashboard"
-                    className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+                    className="group mb-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition-transform hover:scale-105"
                 >
-                    <Briefcase className="h-4 w-4 transition-all group-hover:scale-110" />
+                    <Scale className="h-5 w-5" />
                     <span className="sr-only">LexControl</span>
                 </Link>
-                {links.map((link) => (
-                    <Tooltip key={link.label}>
-                        <TooltipTrigger asChild>
-                            <Link
-                                href={link.href}
-                                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${pathname === link.href
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'text-foreground hover:text-foreground'
+
+                {DASHBOARD_NAV_LINKS.map((link) => {
+                    const active = isActive(link.href);
+                    return (
+                        <Tooltip key={link.href}>
+                            <TooltipTrigger asChild>
+                                <Link
+                                    href={link.href}
+                                    className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+                                        active
+                                            ? "bg-primary/15 text-primary font-semibold"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                     }`}
-                            >
-                                <link.icon className="h-5 w-5" />
-                                <span className="sr-only">{link.label}</span>
-                            </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">{link.label}</TooltipContent>
-                    </Tooltip>
-                ))}
+                                >
+                                    <link.icon className="h-5 w-5" />
+                                    <span className="sr-only">{link.label}</span>
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">{link.label}</TooltipContent>
+                        </Tooltip>
+                    );
+                })}
+
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
                             href="/dashboard/settings"
-                            className={`mt-auto flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8 ${pathname === '/dashboard/settings'
-                                ? 'bg-accent text-accent-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
+                            className={`mt-auto flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+                                isActive("/dashboard/settings")
+                                    ? "bg-primary/15 text-primary font-semibold"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`}
                         >
                             <Settings className="h-5 w-5" />
-                            <span className="sr-only">Configuración</span>
+                            <span className="sr-only">Configuración y Equipo</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Configuración</TooltipContent>
+                    <TooltipContent side="right">Configuración y Equipo</TooltipContent>
                 </Tooltip>
             </nav>
         </TooltipProvider>

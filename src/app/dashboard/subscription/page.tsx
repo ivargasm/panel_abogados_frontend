@@ -1,14 +1,13 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from 'react';
-import { useAuthStore } from '@/app/store/Store';
+import React, { Suspense, useEffect, useState } from "react";
+import { useAuthStore } from "@/app/store/Store";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Star, Zap } from "lucide-react";
-import { createCheckoutSession, createCustomerPortalSession } from '@/app/lib/api';
-import { toast } from 'sonner';
-import ProtectedRoute from '@/app/components/ProtectedRoutes';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { API_URL, createCheckoutSession, createCustomerPortalSession } from "@/app/lib/api";
+import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
 interface UsageStats {
@@ -17,33 +16,35 @@ interface UsageStats {
     usage: {
         clients: number;
         cases: number;
+        users: number;
         storage_mb: number;
     };
     limits: {
-        max_clients: number | string;
-        max_cases: number | string;
-        storage_mb: number | string;
+        clients: number;
+        cases: number;
+        users: number;
+        storage_mb: number;
     };
 }
 
 const planFeatures = {
     free: [
-        "Hasta 3 casos activos",
-        "Hasta 5 clientes",
-        "500 MB de almacenamiento",
-        "Portal del cliente",
-        "Calendario de eventos"
+        "Hasta 3 expedientes activos",
+        "Hasta 5 clientes en cartera",
+        "Titular + 1 colaborador asociado",
+        "500 MB de expediente digital seguro",
+        "Portal del cliente y Agenda procesal",
     ],
     solo: [
-        "Casos activos ilimitados",
+        "Expedientes activos ilimitados",
         "Clientes ilimitados",
-        "10 GB de almacenamiento",
-        "Soporte prioritario por correo",
-        "Todas las funciones del plan Básico"
-    ]
+        "10 GB de almacenamiento en la nube",
+        "Estados de cuenta y recibos imprimibles",
+        "Soporte prioritario para el despacho",
+    ],
 };
 
-function SubscriptionContent() {
+function SubscriptionPageBody() {
     const { user, url } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const searchParams = useSearchParams();
@@ -51,22 +52,20 @@ function SubscriptionContent() {
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
     useEffect(() => {
-        const paymentStatus = searchParams.get('payment');
-
-        if (paymentStatus === 'canceled') {
-            toast.info('Proceso de pago cancelado', {
-                description: 'Puedes volver a intentarlo cuando quieras desde esta página.',
+        const paymentStatus = searchParams.get("payment");
+        if (paymentStatus === "canceled") {
+            toast.info("Proceso de pago cancelado", {
+                description: "Puedes volver a intentarlo cuando quieras desde esta página.",
             });
-            router.replace('/dashboard/subscription');
+            router.replace("/dashboard/subscription");
         }
-
         fetchUsageStats();
     }, [searchParams, router]);
 
     const fetchUsageStats = async () => {
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/subscriptions/usage`, {
-                credentials: 'include'
+            const response = await fetch(`${API_URL}/api/subscriptions/usage`, {
+                credentials: "include",
             });
             if (response.ok) {
                 const data = await response.json();
@@ -84,8 +83,8 @@ function SubscriptionContent() {
             if (checkout_url) {
                 window.location.href = checkout_url;
             }
-        } catch {
-            toast.error("Hubo un problema al iniciar el pago. Inténtalo de nuevo.");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo iniciar la suscripción.");
             setIsLoading(false);
         }
     };
@@ -97,30 +96,33 @@ function SubscriptionContent() {
             if (portal_url) {
                 window.location.href = portal_url;
             }
-        } catch {
-            toast.error("Hubo un problema al abrir el portal. Inténtalo de nuevo.");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo abrir el portal de facturación.");
             setIsLoading(false);
         }
     };
 
-    const currentPlan = user?.subscription_plan || 'free';
-    const isSubscribed = currentPlan === 'solo';
+    const currentPlan = usageStats?.plan || user?.subscription_plan || "free";
+    const isSubscribed = currentPlan === "solo" || currentPlan === "firm";
+    const isOwner = user?.role === "owner";
 
-    const renderProgressBar = (current: number, max: number | string, label: string) => {
-        const limit = typeof max === 'number' ? max : Infinity;
-        const percentage = limit === Infinity ? 0 : Math.min((current / limit) * 100, 100);
-        const displayMax = limit === Infinity ? "Ilimitado" : limit;
+    const renderProgressBar = (current: number, max: number, label: string, unit = "") => {
+        const isUnlimited = max === -1;
+        const percentage = isUnlimited ? 20 : Math.min((current / Math.max(max, 1)) * 100, 100);
+        const displayMax = isUnlimited ? "Ilimitado" : `${max}${unit}`;
 
         return (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
                 <div className="flex justify-between text-sm">
-                    <span>{label}</span>
-                    <span className="text-muted-foreground">{current} / {displayMax}</span>
+                    <span className="font-medium">{label}</span>
+                    <span className="text-muted-foreground">
+                        {current}{unit} / {displayMax}
+                    </span>
                 </div>
-                <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden">
                     <div
-                        className={`h-full ${percentage > 90 ? 'bg-red-500' : 'bg-primary'} transition-all duration-500`}
-                        style={{ width: `${limit === Infinity ? 100 : percentage}%` }}
+                        className={`h-full ${!isUnlimited && percentage >= 90 ? "bg-red-500" : "bg-primary"} transition-all duration-500`}
+                        style={{ width: `${percentage}%` }}
                     />
                 </div>
             </div>
@@ -128,30 +130,35 @@ function SubscriptionContent() {
     };
 
     return (
-        <div className="container mx-auto p-4 md:p-8 space-y-8">
+        <div className="container mx-auto max-w-6xl space-y-8">
             <div>
-                <h1 className="text-3xl font-bold">Suscripción</h1>
-                <p className="text-muted-foreground">Gestiona tu plan y accede a todas las funcionalidades de LexControl.</p>
+                <h1 className="text-3xl font-bold tracking-tight">Plan y Capacidad del Despacho</h1>
+                <p className="text-muted-foreground">
+                    Consulta el uso de expedientes, cartera de clientes, integrantes y almacenamiento documental.
+                </p>
             </div>
 
-            {/* Usage Summary */}
             {usageStats && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Uso del Plan Actual</CardTitle>
-                        <CardDescription>
-                            Estás en el plan <span className="font-bold uppercase">{usageStats.plan}</span>.
-                            Estado: <Badge variant={usageStats.status === 'active' ? 'default' : 'secondary'}>{usageStats.status}</Badge>
+                        <CardTitle>Consumo Actual del Despacho</CardTitle>
+                        <CardDescription className="flex items-center gap-2 pt-1">
+                            <span>Plan activo:</span>
+                            <Badge variant="default" className="uppercase">{usageStats.plan}</Badge>
+                            <span>Estado:</span>
+                            <Badge variant="outline">{usageStats.status}</Badge>
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid gap-6 md:grid-cols-3">
-                            {renderProgressBar(usageStats.usage.clients, usageStats.limits.max_clients, "Clientes")}
-                            {renderProgressBar(usageStats.usage.cases, usageStats.limits.max_cases, "Casos")}
+                    <CardContent>
+                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            {renderProgressBar(usageStats.usage.clients, usageStats.limits.clients, "Clientes activos")}
+                            {renderProgressBar(usageStats.usage.cases, usageStats.limits.cases, "Expedientes en trámite")}
+                            {renderProgressBar(usageStats.usage.users, usageStats.limits.users, "Integrantes del despacho")}
                             {renderProgressBar(
-                                parseFloat((usageStats.usage.storage_mb / 1024).toFixed(2)),
-                                usageStats.limits.storage_mb === "Ilimitado" ? "Ilimitado" : parseFloat((usageStats.limits.storage_mb as number / 1024).toFixed(2)),
-                                "Almacenamiento (GB)"
+                                Number(usageStats.usage.storage_mb.toFixed(1)),
+                                usageStats.limits.storage_mb,
+                                "Almacenamiento",
+                                " MB"
                             )}
                         </div>
                     </CardContent>
@@ -159,18 +166,19 @@ function SubscriptionContent() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                {/* Plan Gratuito */}
-                <Card className={!isSubscribed ? 'border-blue-500 border-2' : 'opacity-60'}>
+                <Card className={!isSubscribed ? "border-primary border-2" : "opacity-75"}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><CheckCircle className="text-gray-400" /> Plan Básico</CardTitle>
-                        <CardDescription>Ideal para empezar a organizar tus primeros casos.</CardDescription>
-                        <p className="text-3xl font-bold mt-2">Gratis</p>
+                        <CardTitle className="flex items-center gap-2">
+                            <CheckCircle className="text-muted-foreground h-5 w-5" /> Plan Inicial
+                        </CardTitle>
+                        <CardDescription>Ideal para evaluación académica o abogados independientes iniciando su cartera.</CardDescription>
+                        <p className="text-3xl font-bold mt-2">Sin costo</p>
                     </CardHeader>
                     <CardContent>
                         <ul className="space-y-3">
-                            {planFeatures.free.map(feature => (
-                                <li key={feature} className="flex items-center gap-2">
-                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                            {planFeatures.free.map((feature) => (
+                                <li key={feature} className="flex items-center gap-2 text-sm">
+                                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
                                     <span>{feature}</span>
                                 </li>
                             ))}
@@ -178,36 +186,45 @@ function SubscriptionContent() {
                     </CardContent>
                     <CardFooter>
                         {!isSubscribed && (
-                            <Button variant="outline" disabled className="w-full">Tu Plan Actual</Button>
+                            <Button variant="outline" disabled className="w-full">
+                                Plan Activo Actual
+                            </Button>
                         )}
                     </CardFooter>
                 </Card>
 
-                {/* Plan Profesional */}
-                <Card className={isSubscribed ? 'border-green-500 border-2' : ''}>
+                <Card className={isSubscribed ? "border-emerald-500 border-2" : ""}>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Star className="text-yellow-400" /> Plan Profesional</CardTitle>
-                        <CardDescription>Desbloquea todo el potencial de LexControl sin límites.</CardDescription>
-                        <p className="text-3xl font-bold mt-2">$400 <span className="text-lg font-normal text-muted-foreground">MXN / mes</span></p>
+                        <CardTitle className="flex items-center gap-2">
+                            <Star className="text-amber-500 h-5 w-5" /> Plan Despacho Profesional
+                        </CardTitle>
+                        <CardDescription>Capacidad ilimitada en expedientes y clientes para firmas jurídicas en crecimiento.</CardDescription>
+                        <p className="text-3xl font-bold mt-2">
+                            $400 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <ul className="space-y-3">
-                            {planFeatures.solo.map(feature => (
-                                <li key={feature} className="flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-blue-500" />
+                            {planFeatures.solo.map((feature) => (
+                                <li key={feature} className="flex items-center gap-2 text-sm">
+                                    <Zap className="h-4 w-4 text-primary shrink-0" />
                                     <span>{feature}</span>
                                 </li>
                             ))}
                         </ul>
                     </CardContent>
                     <CardFooter>
-                        {isSubscribed ? (
-                            <Button onClick={handleManageSubscription} disabled={isLoading} className='w-full cursor-pointer'>
-                                {isLoading ? 'Cargando...' : 'Gestionar Suscripción'}
+                        {!isOwner ? (
+                            <Button variant="outline" disabled className="w-full">
+                                Solo el titular del despacho puede modificar el plan
+                            </Button>
+                        ) : isSubscribed ? (
+                            <Button onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
+                                {isLoading ? "Cargando..." : "Administrar Suscripción"}
                             </Button>
                         ) : (
-                            <Button onClick={handleUpgrade} disabled={isLoading} className='w-full cursor-pointer'>
-                                {isLoading ? 'Procesando...' : 'Actualizar a Profesional'}
+                            <Button onClick={handleUpgrade} disabled={isLoading} className="w-full cursor-pointer">
+                                {isLoading ? "Conectando con pasarela..." : "Actualizar a Plan Profesional"}
                             </Button>
                         )}
                     </CardFooter>
@@ -220,9 +237,7 @@ function SubscriptionContent() {
 export default function SubscriptionPage() {
     return (
         <Suspense fallback={<div>Cargando suscripción...</div>}>
-            <ProtectedRoute allowedRoles={['owner', 'lawyer']}>
-                <SubscriptionContent />
-            </ProtectedRoute>
+            <SubscriptionPageBody />
         </Suspense>
     );
 }

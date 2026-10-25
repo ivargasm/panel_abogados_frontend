@@ -1,101 +1,130 @@
 // types/index.ts
-// Este archivo centraliza todas las definiciones de tipos de TypeScript
-// para el proyecto, creando una fuente única de verdad para las estructuras de datos.
+// Definiciones centralizadas de tipos de TypeScript para LexControl.
 
-// --- Tipos para la API ---
-
-/**
- * Datos que se envían al backend para crear o actualizar un Cliente.
- */
 export type ClientData = {
     full_name: string;
     email?: string | null;
     phone_number?: string | null;
     address?: string | null;
     rfc?: string | null;
+    notes?: string | null;
+    can_view_billing?: boolean;
 };
 
-/**
- * Datos que se envían al backend para crear o actualizar un Caso.
- */
 export type CaseData = {
     title: string;
     client_id: number;
+    assigned_lawyer_id?: number | null;
     case_number?: string | null;
+    judicial_file_number?: string | null;
+    legal_matter?: string | null;
+    court_name?: string | null;
+    client_procedural_role?: string | null;
+    opposing_party?: string | null;
     description?: string | null;
+    status?: string;
 };
 
-
-// --- Tipos de Respuesta (Opcional pero recomendado) ---
-// Estos tipos representan la estructura completa de los datos tal como los devuelve la API.
-
-/**
- * Representa un objeto Cliente completo, incluyendo los datos que añade el backend.
- */
 export type Client = ClientData & {
     id: number;
     workspace_id: number;
-    created_at: string; // La API devuelve el datetime como string ISO
-};
-
-/**
- * Representa un objeto Caso completo, incluyendo el objeto Cliente anidado.
- */
-export type Case = Omit<CaseData, 'client_id'> & {
-    id: number;
-    assigned_lawyer_id: number;
-    workspace_id: number;
     created_at: string;
-    status: string; // Podríamos usar un Enum si lo sincronizamos con el backend
-    client: Client; // Objeto cliente anidado
+    updated_at?: string;
 };
 
+export type LawyerPublicInfo = {
+    id: number;
+    full_name: string;
+    email: string;
+    phone_number?: string | null;
+    job_title?: string | null;
+    professional_license?: string | null;
+};
 
-/**
- * Representa la información básica de un usuario, usada en las actualizaciones.
- */
 export type UserBasicInfo = {
     id: number;
     full_name: string;
+    job_title?: string | null;
+    professional_license?: string | null;
 };
 
-/**
- * Representa un objeto de actualización de caso completo, tal como lo devuelve la API.
- */
+export type Case = Omit<CaseData, "client_id"> & {
+    id: number;
+    client_id: number;
+    assigned_lawyer_id: number;
+    workspace_id: number;
+    created_at: string;
+    updated_at?: string;
+    status: string;
+    client: Client;
+    assigned_lawyer?: LawyerPublicInfo | null;
+};
+
 export type CaseUpdate = {
     id: number;
     update_text: string;
     visible_to_client: boolean;
-    created_at: string; // La API devuelve el datetime como string ISO
+    created_at: string;
     created_by: UserBasicInfo;
     status: "Pendiente" | "En Proceso" | "Completado" | "Cancelado";
 };
 
-// La estructura de datos para la página de detalle del caso del cliente
+export type PortalDocument = {
+    id: number;
+    file_name: string;
+    file_type: string | null;
+    file_size_bytes: number;
+    uploaded_at: string;
+};
+
+export type PortalEvent = {
+    id: number;
+    title: string;
+    description: string | null;
+    start_time: string;
+    end_time: string | null;
+    event_type: string;
+    is_fatal_deadline: boolean;
+    location: string | null;
+    status: string;
+};
+
 export type ClientCaseDetail = {
     id: number;
     title: string;
     case_number: string | null;
+    judicial_file_number?: string | null;
+    legal_matter?: string | null;
+    court_name?: string | null;
+    client_procedural_role?: string | null;
+    opposing_party?: string | null;
     description: string | null;
     status: string;
+    created_at?: string | null;
+    workspace_name?: string | null;
+    can_view_billing: boolean;
     updates: CaseUpdate[];
-    assigned_lawyer?: UserBasicInfo | null;
+    documents: PortalDocument[];
+    upcoming_events: PortalEvent[];
+    assigned_lawyer?: LawyerPublicInfo | null;
 };
 
-// La estructura para la lista de casos en el dashboard del cliente
 export type CaseSummary = {
     id: number;
     title: string;
     case_number: string | null;
+    judicial_file_number?: string | null;
+    legal_matter?: string | null;
+    court_name?: string | null;
+    client_procedural_role?: string | null;
+    opposing_party?: string | null;
     description: string | null;
     status: string;
+    created_at?: string;
     client: Client;
-    assigned_lawyer?: UserBasicInfo | null;
+    assigned_lawyer?: LawyerPublicInfo | null;
 };
 
-/**
- * Datos que se envían al backend para crear una nueva actualización.
- */
 export type CaseUpdateData = {
     update_text: string;
     visible_to_client: boolean;
@@ -104,28 +133,20 @@ export type CaseUpdateData = {
 
 export type CaseUpdateStatus = {
     status: "Pendiente" | "En Proceso" | "Completado" | "Cancelado";
-}
+};
 
-export type LawyerCaseDetail = {
-    id: number;
-    title: string;
-    case_number: string | null;
-    description: string | null;
-    status: string;
-    client: Client;
+export type LawyerCaseDetail = Case & {
     updates: CaseUpdate[];
 };
 
 export type UpdateStatus = "Pendiente" | "En Proceso" | "Completado" | "Cancelado";
 
-/**
- * Representa un objeto Documento completo, tal como lo devuelve la API.
- */
 export type Document = {
     id: number;
     file_name: string;
     file_path: string;
     file_type: string | null;
+    file_size_bytes?: number;
     uploaded_at: string;
     visible_to_client: boolean;
     uploaded_by: {
@@ -134,34 +155,26 @@ export type Document = {
     };
 };
 
-// --- Tipos para la subida de archivos ---
 export type InitiateUploadResponse = {
     upload_url: string;
     file_path: string;
     document_id: number;
 };
 
-// --- TIPOS PARA EL CALENDARIO ---
-
-/**
- * Representa un objeto de Evento del Calendario completo, tal como lo devuelve la API.
- */
 export type CalendarEvent = {
     id: number;
     title: string;
     description: string | null;
-    start_time: string; // La API devuelve datetime como string ISO
+    start_time: string;
     end_time: string | null;
     is_all_day: boolean;
-    event_type: string; // Podríamos usar un Enum si lo sincronizamos con el frontend
+    event_type: string;
+    is_fatal_deadline: boolean;
     case_id: number | null;
     location: string | null;
     status: string;
 };
 
-/**
- * Datos que se envían al backend para crear un nuevo evento.
- */
 export type CalendarEventData = {
     title: string;
     description?: string | null;
@@ -169,41 +182,44 @@ export type CalendarEventData = {
     end_time?: Date | string | null;
     is_all_day: boolean;
     event_type: string;
+    is_fatal_deadline?: boolean;
     case_id?: number | null;
     location?: string | null;
-    status: string;
+    status?: string;
 };
 
-// --- TIPOS PARA INVITACIONES ---
-
-/**
- * Datos que se envían al backend para invitar a un cliente.
- */
 export type ClientInviteData = {
     email: string;
-    case_title: string;
-    client_name: string;
+    case_title?: string;
+    client_name?: string;
 };
 
-/**
- * Datos que devuelve la API al verificar un token de invitación.
- */
 export type InvitationDetails = {
     email: string;
     case_title: string;
+    workspace_name?: string | null;
     client_name: string;
 };
 
-/**
- * Datos que envía el cliente al registrarse con un token.
- */
 export type AcceptInvitationData = {
     token: string;
     password: string;
     full_name: string;
 };
 
-// --- TIPOS PARA FACTURACIÓN ---
+export type InvoiceItemType = {
+    description: string;
+    quantity: number;
+    price: number;
+};
+
+export type PaymentRecord = {
+    id: number;
+    amount: number;
+    payment_date: string;
+    method: string;
+    notes?: string | null;
+};
 
 export type Invoice = {
     id: number;
@@ -212,15 +228,31 @@ export type Invoice = {
     balance_due: number;
     status: string;
     issue_date: string;
-    due_date: string;
+    due_date: string | null;
     client_id: number;
+    case_id?: number | null;
+    description?: string | null;
+    client?: {
+        id: number;
+        full_name: string;
+        email?: string | null;
+    } | null;
+    case?: {
+        id: number;
+        title: string;
+    } | null;
+    items?: InvoiceItemType[] | null;
+    payments?: PaymentRecord[] | null;
 };
 
 export type InvoiceData = {
     client_id: number;
+    case_id?: number | null;
     amount: number;
     description: string;
+    issue_date?: string | null;
     due_date: string | null;
+    items?: InvoiceItemType[];
 };
 
 export type PaymentData = {
@@ -233,4 +265,33 @@ export type PresignedURLResponse = {
     upload_url: string;
     file_path: string;
     document_id: number;
+};
+
+export type TeamMember = {
+    id: number;
+    full_name: string;
+    email: string;
+    role: "owner" | "lawyer";
+    job_title?: string | null;
+    phone_number?: string | null;
+    professional_license?: string | null;
+    is_active: boolean;
+    assigned_cases_count: number;
+    created_at?: string | null;
+};
+
+export type ConflictCheckResult = {
+    has_conflict: boolean;
+    client_matches: {
+        client_id: number;
+        full_name: string;
+        rfc?: string | null;
+    }[];
+    opposing_party_matches: {
+        case_id: number;
+        case_title: string;
+        judicial_file_number?: string | null;
+        opposing_party: string;
+        client_name?: string | null;
+    }[];
 };

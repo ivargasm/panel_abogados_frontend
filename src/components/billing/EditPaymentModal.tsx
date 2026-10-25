@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { API_URL } from "@/app/lib/api";
 
 interface Payment {
     id: number;
     amount: number;
     payment_date: string;
     method: string;
-    notes: string;
+    notes?: string | null;
 }
 
 interface EditPaymentModalProps {
@@ -25,14 +26,14 @@ interface EditPaymentModalProps {
 
 export default function EditPaymentModal({ payment, isOpen, onClose }: EditPaymentModalProps) {
     const [amount, setAmount] = useState("");
-    const [method, setMethod] = useState("");
+    const [method, setMethod] = useState("Transferencia");
     const [notes, setNotes] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (payment) {
             setAmount(payment.amount.toString());
-            setMethod(payment.method);
+            setMethod(payment.method || "Transferencia");
             setNotes(payment.notes || "");
         }
     }, [payment]);
@@ -43,7 +44,7 @@ export default function EditPaymentModal({ payment, isOpen, onClose }: EditPayme
 
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/payments/${payment.id}`, {
+            const response = await fetch(`${API_URL}/api/billing/payments/${payment.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -55,11 +56,11 @@ export default function EditPaymentModal({ payment, isOpen, onClose }: EditPayme
             });
 
             if (response.ok) {
-                toast.success("Pago actualizado correctamente");
+                toast.success("Abono actualizado correctamente");
                 onClose();
             } else {
                 const error = await response.json();
-                toast.error(error.detail || "Error al actualizar el pago");
+                toast.error(error.detail || "Error al actualizar el abono");
             }
         } catch (error) {
             console.error("Error updating payment:", error);
@@ -73,15 +74,16 @@ export default function EditPaymentModal({ payment, isOpen, onClose }: EditPayme
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Editar Pago</DialogTitle>
+                    <DialogTitle>Editar Abono</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <Label htmlFor="amount">Monto</Label>
+                        <Label htmlFor="amount">Monto (MXN)</Label>
                         <Input
                             id="amount"
                             type="number"
                             step="0.01"
+                            min="0.01"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
                             required
@@ -89,23 +91,23 @@ export default function EditPaymentModal({ payment, isOpen, onClose }: EditPayme
                     </div>
 
                     <div>
-                        <Label htmlFor="method">Método de Pago</Label>
+                        <Label htmlFor="method">Forma de Pago</Label>
                         <Select value={method} onValueChange={setMethod} required>
                             <SelectTrigger>
-                                <SelectValue placeholder="Selecciona método" />
+                                <SelectValue placeholder="Selecciona forma de pago" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="Transferencia">Transferencia SPEI</SelectItem>
                                 <SelectItem value="Efectivo">Efectivo</SelectItem>
-                                <SelectItem value="Transferencia">Transferencia</SelectItem>
-                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                                <SelectItem value="Cheque">Cheque</SelectItem>
+                                <SelectItem value="Tarjeta">Tarjeta Bancaria</SelectItem>
+                                <SelectItem value="Cheque">Cheque Nominativo</SelectItem>
                                 <SelectItem value="Otro">Otro</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div>
-                        <Label htmlFor="notes">Notas</Label>
+                        <Label htmlFor="notes">Referencia / Notas</Label>
                         <Textarea
                             id="notes"
                             value={notes}

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { API_URL } from "@/app/lib/api";
+import { formatCurrencyMXN } from "@/lib/legal-domain";
 
 interface AddItemModalProps {
     invoiceId: number;
@@ -27,13 +29,13 @@ export default function AddItemModal({ invoiceId, isOpen, onClose }: AddItemModa
 
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/billing/invoices/${invoiceId}/items`, {
+            const response = await fetch(`${API_URL}/api/billing/invoices/${invoiceId}/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
                 body: JSON.stringify({
                     description,
-                    quantity: parseInt(quantity),
+                    quantity: parseInt(quantity, 10),
                     price: parseFloat(price),
                 }),
             });
@@ -60,16 +62,16 @@ export default function AddItemModal({ invoiceId, isOpen, onClose }: AddItemModa
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Agregar Concepto</DialogTitle>
+                    <DialogTitle>Agregar Concepto de Honorarios / Gastos</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <Label htmlFor="description">Descripción</Label>
+                        <Label htmlFor="description">Descripción del Concepto</Label>
                         <Textarea
                             id="description"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Ej: Consulta inicial, Redacción de contrato..."
+                            placeholder="Ej: Comparecencia en audiencia confesional, pago de copias certificadas..."
                             rows={2}
                             required
                         />
@@ -90,7 +92,7 @@ export default function AddItemModal({ invoiceId, isOpen, onClose }: AddItemModa
                         </div>
 
                         <div>
-                            <Label htmlFor="price">Precio Unitario</Label>
+                            <Label htmlFor="price">Importe Unitario (MXN)</Label>
                             <Input
                                 id="price"
                                 type="number"
@@ -107,7 +109,7 @@ export default function AddItemModal({ invoiceId, isOpen, onClose }: AddItemModa
                     <div className="bg-muted p-3 rounded-md">
                         <div className="flex justify-between items-center">
                             <span className="font-medium">Subtotal:</span>
-                            <span className="text-lg font-bold">${subtotal.toFixed(2)}</span>
+                            <span className="text-lg font-bold">{formatCurrencyMXN(subtotal)}</span>
                         </div>
                     </div>
 

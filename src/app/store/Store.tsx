@@ -1,83 +1,80 @@
-import { create } from 'zustand';
-import { login, fetchUser, logout, register } from "../lib/api";
+import { create } from "zustand";
+import { API_URL, login, fetchUser, logout, register } from "../lib/api";
 
-interface AuthState {
-    user: {
-        id: string;
-        full_name: string;
-        email: string;
-        phone_number?: string;
-        job_title?: string;
-        profile_picture_url?: string;
-        role: string;
-        workspace_id: string;
-        subscription_plan: "free" | "solo" | "firm";
-        subscription_status: "trialing" | "active" | "past_due" | "canceled";
-    } | null;
-    setUser: (user: AuthState['user']) => void;
-    logout: () => void;
-    url: string;
-    loginUser: (email: string, password: string, url: string) => Promise<{ role: string;[key: string]: unknown } | void>;
-    userAuth: boolean
-    userValid: () => Promise<void>;
-    registerUser: (username: string, email: string, password: string) => Promise<boolean>;
+export interface AuthUser {
+    id: number | string;
+    full_name: string;
+    email: string;
+    phone_number?: string;
+    job_title?: string;
+    professional_license?: string;
+    profile_picture_url?: string;
+    role: string;
+    workspace_id: number | string;
+    workspace_name?: string;
+    subscription_plan: "free" | "solo" | "firm";
+    subscription_status: "trialing" | "active" | "past_due" | "canceled";
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+interface AuthState {
+    user: AuthUser | null;
+    setUser: (user: AuthUser | null) => void;
+    logout: () => Promise<void>;
+    url: string;
+    loginUser: (email: string, password: string, url?: string) => Promise<{ role: string; [key: string]: unknown }>;
+    userAuth: boolean;
+    authChecked: boolean;
+    userValid: () => Promise<void>;
+    registerUser: (
+        username: string,
+        email: string,
+        password: string,
+        extras?: { workspace_name?: string; professional_license?: string }
+    ) => Promise<AuthUser>;
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     userAuth: false,
-    url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-    setUser: (user) => set({ user }),
+    authChecked: false,
+    url: API_URL,
+    setUser: (user) => set({ user, userAuth: Boolean(user), authChecked: true }),
     loginUser: async (email, password) => {
-        // 1. Hacemos el login para obtener la cookie
-        const loginResponse = await login(email, password, useAuthStore.getState().url);
-        if (!loginResponse.ok) { // Verificamos que la respuesta del login fue exitosa
-            throw new Error('Credenciales incorrectas');
-        }
+        const baseUrl = get().url;
+        await login(email, password, baseUrl);
 
-        // 2. Obtenemos los datos del usuario
-        const userData = await fetchUser(useAuthStore.getState().url);
+        const userData = await fetchUser(baseUrl);
         if (!userData) {
-            // Si no se obtienen datos del usuario, algo falló
-            set({ userAuth: false, user: null });
-            throw new Error('No se pudieron obtener los datos del usuario después del login.');
+            set({ userAuth: false, user: null, authChecked: true });
+            throw new Error("No se pudieron obtener los datos del usuario después del inicio de sesión.");
         }
 
-        // 3. Actualizamos el estado y devolvemos los datos del usuario
-        set({ userAuth: true, user: userData });
-        return userData; // <-- ¡CAMBIO CLAVE!
+        set({ userAuth: true, user: userData, authChecked: true });
+        return userData;
     },
     userValid: async () => {
         try {
-            const data = await fetchUser(useAuthStore.getState().url);
+            const data = await fetchUser(get().url);
             if (!data) {
-                set({ userAuth: false, user: null });
+                set({ userAuth: false, user: null, authChecked: true });
                 return;
             }
-            set({ userAuth: true, user: data });
+            set({ userAuth: true, user: data, authChecked: true });
         } catch {
-            // Si falla fetchUser (ej. 401), asumimos que no hay sesión válida
-            set({ userAuth: false, user: null });
+            set({ userAuth: false, user: null, authChecked: true });
         }
     },
-    // 📌 Cerrar sesión
     logout: async () => {
         try {
-            await logout(useAuthStore.getState().url);
+            await logout(get().url);
         } catch (error) {
             console.error("Error al cerrar sesión", error);
         } finally {
-            // Limpiamos el estado y redirigimos siempre, incluso si falla la petición al backend
-            set({ user: null, userAuth: false });
+            set({ user: null, userAuth: false, authChecked: true });
             window.location.href = "/auth/login";
         }
     },
-    registerUser: async (username, email, password) => {
-        const success = await register(username, email, password, useAuthStore.getState().url);
-        if (!success) {
-            return false;
-        }
-        return success;
+    registerUser: async (username, email, password, extras): Promise<AuthUser> => {
+        return await register(username, email, password, get().url, extras);
     },
-
 }));
