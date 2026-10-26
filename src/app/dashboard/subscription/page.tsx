@@ -56,6 +56,7 @@ const planFeatures = {
 function SubscriptionPageBody() {
     const { user, url } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
+    const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
     const searchParams = useSearchParams();
     const router = useRouter();
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
@@ -88,7 +89,7 @@ function SubscriptionPageBody() {
     const handleUpgrade = async (plan: "solo" | "firm" = "solo") => {
         setIsLoading(true);
         try {
-            const { checkout_url } = await createCheckoutSession(plan, url);
+            const { checkout_url } = await createCheckoutSession(plan, billingCycle, url);
             if (checkout_url) {
                 window.location.href = checkout_url;
             }
@@ -174,6 +175,39 @@ function SubscriptionPageBody() {
                 </Card>
             )}
 
+            {/* Selector de Ciclo de Facturación (Mensual / Anual) */}
+            <div className="flex justify-center pt-2">
+                <div className="relative flex items-center rounded-full bg-muted p-1 ring-1 ring-border">
+                    <button
+                        type="button"
+                        onClick={() => setBillingCycle("monthly")}
+                        className={`rounded-full px-5 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                            billingCycle === "monthly"
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        Facturación Mensual
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setBillingCycle("yearly")}
+                        className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                            billingCycle === "yearly"
+                                ? "bg-primary text-primary-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                        <span>Facturación Anual</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                            billingCycle === "yearly" ? "bg-amber-400 text-gray-950" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                        }`}>
+                            -17% (2 meses gratis)
+                        </span>
+                    </button>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
                 {/* Free Plan */}
                 <Card className={`flex flex-col justify-between ${currentPlan === "free" ? "border-primary border-2 shadow-sm" : "opacity-80"}`}>
@@ -228,9 +262,19 @@ function SubscriptionPageBody() {
                                 {currentPlan === "solo" && <Badge className="bg-emerald-600 text-white">Activo</Badge>}
                             </CardTitle>
                             <CardDescription>Expedientes y clientes ilimitados para el abogado litigante.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">
-                                $399 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
-                            </p>
+                            <div className="mt-2">
+                                <p className="text-3xl font-bold">
+                                    {billingCycle === "yearly" ? "$3,990" : "$399"}{" "}
+                                    <span className="text-base font-normal text-muted-foreground">
+                                        {billingCycle === "yearly" ? "MXN / año" : "MXN / mes"}
+                                    </span>
+                                </p>
+                                {billingCycle === "yearly" && (
+                                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">
+                                        $332.50 MXN / mes (Ahorras $798 al año)
+                                    </p>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ul className="space-y-3">
@@ -280,9 +324,19 @@ function SubscriptionPageBody() {
                                 {currentPlan === "firm" && <Badge className="bg-emerald-600 text-white">Activo</Badge>}
                             </CardTitle>
                             <CardDescription>Para despachos de hasta 5 abogados con roles y auditoría procesal.</CardDescription>
-                            <p className="text-3xl font-bold mt-2">
-                                $899 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
-                            </p>
+                            <div className="mt-2">
+                                <p className="text-3xl font-bold">
+                                    {billingCycle === "yearly" ? "$8,990" : "$899"}{" "}
+                                    <span className="text-base font-normal text-muted-foreground">
+                                        {billingCycle === "yearly" ? "MXN / año" : "MXN / mes"}
+                                    </span>
+                                </p>
+                                {billingCycle === "yearly" && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">
+                                        $749.16 MXN / mes (Ahorras $1,798 al año)
+                                    </p>
+                                )}
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ul className="space-y-3">

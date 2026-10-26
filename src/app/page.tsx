@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Workflow, MessageSquare, FileText, Check } from 'lucide-react';
 
 export default function LandingPage() {
+    const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
     return (
         <div className="bg-white">
             {/* Hero Section */}
@@ -158,7 +160,41 @@ export default function LandingPage() {
                             Precios simples y transparentes. Sin costos ocultos. Cancela cuando quieras.
                         </p>
                     </div>
-                    <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-stretch gap-8 sm:mt-20 lg:max-w-none lg:grid-cols-3">
+
+                    {/* Selector de Ciclo de Facturación (Mensual / Anual) */}
+                    <div className="mt-10 flex justify-center">
+                        <div className="relative flex items-center rounded-full bg-gray-100 p-1 ring-1 ring-gray-200">
+                            <button
+                                type="button"
+                                onClick={() => setBillingCycle("monthly")}
+                                className={`rounded-full px-5 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                                    billingCycle === "monthly"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                Facturación Mensual
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setBillingCycle("yearly")}
+                                className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all cursor-pointer ${
+                                    billingCycle === "yearly"
+                                        ? "bg-primary text-white shadow-sm"
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                <span>Facturación Anual</span>
+                                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                                    billingCycle === "yearly" ? "bg-amber-400 text-gray-950" : "bg-emerald-100 text-emerald-800"
+                                }`}>
+                                    -17% (2 meses gratis)
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="mx-auto mt-12 grid max-w-lg grid-cols-1 items-stretch gap-8 sm:mt-16 lg:max-w-none lg:grid-cols-3">
                         {/* FREE Plan */}
                         <div className="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
                             <div>
@@ -203,10 +239,21 @@ export default function LandingPage() {
                         <div className="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 sm:p-10 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-primary">
                             <div>
                                 <h3 className="text-base font-semibold leading-7 text-primary">Abogado Independiente</h3>
-                                <p className="mt-4 flex items-baseline gap-x-2">
-                                    <span className="text-5xl font-bold tracking-tight text-gray-900">$399</span>
-                                    <span className="text-base text-gray-500">MXN/mes</span>
-                                </p>
+                                <div className="mt-4">
+                                    <div className="flex items-baseline gap-x-2">
+                                        <span className="text-5xl font-bold tracking-tight text-gray-900">
+                                            {billingCycle === "yearly" ? "$3,990" : "$399"}
+                                        </span>
+                                        <span className="text-base text-gray-500">
+                                            {billingCycle === "yearly" ? "MXN/año" : "MXN/mes"}
+                                        </span>
+                                    </div>
+                                    {billingCycle === "yearly" && (
+                                        <p className="mt-1 text-xs font-medium text-emerald-600">
+                                            Equivale a $332.50 MXN/mes (Ahorras $798 al año)
+                                        </p>
+                                    )}
+                                </div>
                                 <p className="mt-6 text-base leading-7 text-gray-600">Para postulantes y litigantes en ejercicio individual</p>
                                 <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
                                     <li className="flex gap-x-3">
@@ -250,10 +297,21 @@ export default function LandingPage() {
                             </div>
                             <div>
                                 <h3 className="text-base font-semibold leading-7 text-white">Despacho Jurídico</h3>
-                                <p className="mt-4 flex items-baseline gap-x-2">
-                                    <span className="text-5xl font-bold tracking-tight text-white">$899</span>
-                                    <span className="text-base text-white/80">MXN/mes</span>
-                                </p>
+                                <div className="mt-4">
+                                    <div className="flex items-baseline gap-x-2">
+                                        <span className="text-5xl font-bold tracking-tight text-white">
+                                            {billingCycle === "yearly" ? "$8,990" : "$899"}
+                                        </span>
+                                        <span className="text-base text-white/80">
+                                            {billingCycle === "yearly" ? "MXN/año" : "MXN/mes"}
+                                        </span>
+                                    </div>
+                                    {billingCycle === "yearly" && (
+                                        <p className="mt-1 text-xs font-medium text-amber-300">
+                                            Equivale a $749.16 MXN/mes (Ahorras $1,798 al año)
+                                        </p>
+                                    )}
+                                </div>
                                 <p className="mt-6 text-base leading-7 text-white/80">Para despachos, firmas legales y equipos de litigio</p>
                                 <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-white/90">
                                     <li className="flex gap-x-3">
