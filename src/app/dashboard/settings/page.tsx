@@ -28,8 +28,6 @@ import {
     User,
     Settings,
     Lock,
-    CreditCard,
-    Check,
     Users,
     Plus,
     Pencil,

@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useAuthStore } from "@/app/store/Store";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Star, Zap, Users, ShieldCheck, CreditCard, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle, Star, Zap, Users, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
 import {
     API_URL,
     createCheckoutSession,
@@ -177,7 +177,6 @@ function SubscriptionPageBody() {
 
     const currentPlan = usageStats?.plan || user?.subscription_plan || "free";
     const currentSubCycle = usageStats?.billing_cycle || "monthly";
-    const isSubscribed = currentPlan === "solo" || currentPlan === "firm";
     const isOwner = user?.role === "owner";
 
     const renderProgressBar = (current: number, max: number, label: string, unit = "") => {

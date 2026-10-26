@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Clock, RefreshCw, LogOut } from "lucide-react";
 import { getSessionStatus, refreshSession, logout as logoutApi } from "@/app/lib/api";
 import { useAuthStore } from "@/app/store/Store";
@@ -10,7 +9,6 @@ import { toast } from "sonner";
 const WARNING_THRESHOLD_SECONDS = 300; // 5 minutos antes de expirar
 
 export default function SessionExpiryWatcher() {
-    const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
     const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
