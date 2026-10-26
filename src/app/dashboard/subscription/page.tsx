@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useAuthStore } from "@/app/store/Store";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Star, Zap } from "lucide-react";
+import { CheckCircle, Star, Zap, Users, ShieldCheck } from "lucide-react";
 import { API_URL, createCheckoutSession, createCustomerPortalSession } from "@/app/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -29,18 +29,27 @@ interface UsageStats {
 
 const planFeatures = {
     free: [
-        "Hasta 3 expedientes activos",
-        "Hasta 5 clientes en cartera",
-        "Titular + 1 colaborador asociado",
+        "1 Abogado titular",
+        "Hasta 3 clientes en cartera",
+        "Hasta 2 expedientes activos por cliente",
         "500 MB de expediente digital seguro",
         "Portal del cliente y Agenda procesal",
     ],
     solo: [
-        "Expedientes activos ilimitados",
-        "Clientes ilimitados",
+        "1 Abogado titular (Litigante independiente)",
+        "Expedientes y casos ilimitados",
+        "Cartera de clientes ilimitada",
         "10 GB de almacenamiento en la nube",
-        "Estados de cuenta y recibos imprimibles",
-        "Soporte prioritario para el despacho",
+        "Cobranza completa, recibos y estados de cuenta",
+        "Extractor inteligente de comprobantes SPEI",
+    ],
+    firm: [
+        "Hasta 5 abogados (Titular + 4 colaboradores)",
+        "Expedientes y clientes ilimitados",
+        "50 GB de almacenamiento de alta capacidad",
+        "Módulo integral de colaboradores y asignación de casos",
+        "Validación de cédulas DGP-SEP y bitácora de auditoría",
+        "Panel directivo de cobranza y finanzas por abogado",
     ],
 };
 
@@ -76,10 +85,10 @@ function SubscriptionPageBody() {
         }
     };
 
-    const handleUpgrade = async () => {
+    const handleUpgrade = async (plan: "solo" | "firm" = "solo") => {
         setIsLoading(true);
         try {
-            const { checkout_url } = await createCheckoutSession(url);
+            const { checkout_url } = await createCheckoutSession(plan, url);
             if (checkout_url) {
                 window.location.href = checkout_url;
             }
@@ -165,66 +174,143 @@ function SubscriptionPageBody() {
                 </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                <Card className={!isSubscribed ? "border-primary border-2" : "opacity-75"}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <CheckCircle className="text-muted-foreground h-5 w-5" /> Plan Inicial
-                        </CardTitle>
-                        <CardDescription>Ideal para evaluación académica o abogados independientes iniciando su cartera.</CardDescription>
-                        <p className="text-3xl font-bold mt-2">Sin costo</p>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-3">
-                            {planFeatures.free.map((feature) => (
-                                <li key={feature} className="flex items-center gap-2 text-sm">
-                                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    <span>{feature}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                {/* Free Plan */}
+                <Card className={`flex flex-col justify-between ${currentPlan === "free" ? "border-primary border-2 shadow-sm" : "opacity-80"}`}>
+                    <div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between text-xl">
+                                <span className="flex items-center gap-2">
+                                    <CheckCircle className="text-muted-foreground h-5 w-5" /> Plan Inicial
+                                </span>
+                                {currentPlan === "free" && <Badge variant="secondary">Activo</Badge>}
+                            </CardTitle>
+                            <CardDescription>Para evaluación académica y litigio individual inicial.</CardDescription>
+                            <p className="text-3xl font-bold mt-2">Sin costo</p>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {planFeatures.free.map((feature) => (
+                                    <li key={feature} className="flex items-center gap-2 text-sm">
+                                        <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </div>
                     <CardFooter>
-                        {!isSubscribed && (
+                        {currentPlan === "free" ? (
                             <Button variant="outline" disabled className="w-full">
                                 Plan Activo Actual
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="outline"
+                                onClick={handleManageSubscription}
+                                disabled={isLoading || !isOwner}
+                                className="w-full cursor-pointer"
+                            >
+                                Gestionar en Portal
                             </Button>
                         )}
                     </CardFooter>
                 </Card>
 
-                <Card className={isSubscribed ? "border-emerald-500 border-2" : ""}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Star className="text-amber-500 h-5 w-5" /> Plan Despacho Profesional
-                        </CardTitle>
-                        <CardDescription>Capacidad ilimitada en expedientes y clientes para firmas jurídicas en crecimiento.</CardDescription>
-                        <p className="text-3xl font-bold mt-2">
-                            $400 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
-                        </p>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-3">
-                            {planFeatures.solo.map((feature) => (
-                                <li key={feature} className="flex items-center gap-2 text-sm">
-                                    <Zap className="h-4 w-4 text-primary shrink-0" />
-                                    <span>{feature}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
+                {/* Solo Plan */}
+                <Card className={`flex flex-col justify-between ${currentPlan === "solo" ? "border-emerald-500 border-2 shadow-md bg-emerald-50/10" : "border-slate-200"}`}>
+                    <div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between text-xl">
+                                <span className="flex items-center gap-2">
+                                    <Star className="text-amber-500 h-5 w-5" /> Abogado Independiente
+                                </span>
+                                {currentPlan === "solo" && <Badge className="bg-emerald-600 text-white">Activo</Badge>}
+                            </CardTitle>
+                            <CardDescription>Expedientes y clientes ilimitados para el abogado litigante.</CardDescription>
+                            <p className="text-3xl font-bold mt-2">
+                                $399 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {planFeatures.solo.map((feature) => (
+                                    <li key={feature} className="flex items-center gap-2 text-sm">
+                                        <Zap className="h-4 w-4 text-primary shrink-0" />
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </div>
                     <CardFooter>
                         {!isOwner ? (
                             <Button variant="outline" disabled className="w-full">
-                                Solo el titular del despacho puede modificar el plan
+                                Solo el titular puede modificar el plan
                             </Button>
-                        ) : isSubscribed ? (
+                        ) : currentPlan === "solo" ? (
                             <Button onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
                                 {isLoading ? "Cargando..." : "Administrar Suscripción"}
                             </Button>
+                        ) : currentPlan === "firm" ? (
+                            <Button variant="outline" onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
+                                {isLoading ? "Cargando..." : "Gestionar en Portal"}
+                            </Button>
                         ) : (
-                            <Button onClick={handleUpgrade} disabled={isLoading} className="w-full cursor-pointer">
-                                {isLoading ? "Conectando con pasarela..." : "Actualizar a Plan Profesional"}
+                            <Button onClick={() => handleUpgrade("solo")} disabled={isLoading} className="w-full cursor-pointer">
+                                {isLoading ? "Conectando..." : "Elegir Plan Abogado"}
+                            </Button>
+                        )}
+                    </CardFooter>
+                </Card>
+
+                {/* Firm Plan */}
+                <Card className={`relative flex flex-col justify-between ${currentPlan === "firm" ? "border-emerald-500 border-2 shadow-md bg-emerald-50/10" : "border-primary/50 shadow-sm hover:shadow-md transition-shadow"}`}>
+                    <div className="absolute -top-3.5 right-6">
+                        <Badge className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2.5 py-0.5 shadow-sm text-xs">
+                            Despacho & Equipo
+                        </Badge>
+                    </div>
+                    <div>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between text-xl">
+                                <span className="flex items-center gap-2">
+                                    <Users className="text-primary h-5 w-5" /> Despacho Jurídico
+                                </span>
+                                {currentPlan === "firm" && <Badge className="bg-emerald-600 text-white">Activo</Badge>}
+                            </CardTitle>
+                            <CardDescription>Para despachos de hasta 5 abogados con roles y auditoría procesal.</CardDescription>
+                            <p className="text-3xl font-bold mt-2">
+                                $899 <span className="text-base font-normal text-muted-foreground">MXN / mes</span>
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-3">
+                                {planFeatures.firm.map((feature) => (
+                                    <li key={feature} className="flex items-center gap-2 text-sm">
+                                        <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </div>
+                    <CardFooter>
+                        {!isOwner ? (
+                            <Button variant="outline" disabled className="w-full">
+                                Solo el titular puede modificar el plan
+                            </Button>
+                        ) : currentPlan === "firm" ? (
+                            <Button onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
+                                {isLoading ? "Cargando..." : "Administrar Suscripción"}
+                            </Button>
+                        ) : currentPlan === "solo" ? (
+                            <Button onClick={() => handleUpgrade("firm")} disabled={isLoading} className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90">
+                                {isLoading ? "Conectando..." : "Mejorar a Plan Despacho"}
+                            </Button>
+                        ) : (
+                            <Button onClick={() => handleUpgrade("firm")} disabled={isLoading} className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90">
+                                {isLoading ? "Conectando..." : "Contratar Plan Despacho"}
                             </Button>
                         )}
                     </CardFooter>

@@ -785,10 +785,15 @@ export async function getPortalDocumentDownloadUrl(
 
 // --- Suscripciones ---
 
-export async function createCheckoutSession(url: string = API_URL): Promise<{ checkout_url: string }> {
+export async function createCheckoutSession(
+    plan: "solo" | "firm" = "solo",
+    url: string = API_URL
+): Promise<{ checkout_url: string }> {
     const res = await fetch(`${url}/api/subscriptions/create-checkout-session`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ plan }),
     });
     if (!res.ok) {
         throw new Error(await extractErrorMessage(res, "No se pudo iniciar la sesión de suscripción."));

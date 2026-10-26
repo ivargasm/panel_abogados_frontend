@@ -158,87 +158,139 @@ export default function LandingPage() {
                             Precios simples y transparentes. Sin costos ocultos. Cancela cuando quieras.
                         </p>
                     </div>
-                    <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-center gap-y-6 sm:mt-20 sm:gap-y-0 lg:max-w-none lg:grid-cols-2 lg:gap-x-8">
+                    <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 items-stretch gap-8 sm:mt-20 lg:max-w-none lg:grid-cols-3">
                         {/* FREE Plan */}
-                        <div className="rounded-3xl p-8 ring-1 ring-gray-200 sm:p-10">
-                            <h3 className="text-base font-semibold leading-7 text-primary">Gratuito</h3>
-                            <p className="mt-4 flex items-baseline gap-x-2">
-                                <span className="text-5xl font-bold tracking-tight text-gray-900">$0</span>
-                                <span className="text-base text-gray-500">/mes</span>
-                            </p>
-                            <p className="mt-6 text-base leading-7 text-gray-600">Ideal para comenzar</p>
-                            <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-primary" />
-                                    1 Usuario
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-primary" />
-                                    Hasta 3 Clientes
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-primary" />
-                                    1 Caso Activo
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-primary" />
-                                    100 MB Almacenamiento
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-primary" />
-                                    Funciones Básicas
-                                </li>
-                            </ul>
+                        <div className="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 sm:p-10 shadow-sm hover:shadow-md transition-shadow">
+                            <div>
+                                <h3 className="text-base font-semibold leading-7 text-primary">Gratuito</h3>
+                                <p className="mt-4 flex items-baseline gap-x-2">
+                                    <span className="text-5xl font-bold tracking-tight text-gray-900">$0</span>
+                                    <span className="text-base text-gray-500">/mes</span>
+                                </p>
+                                <p className="mt-6 text-base leading-7 text-gray-600">Ideal para comenzar o evaluar la plataforma</p>
+                                <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        1 Abogado (Titular)
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Hasta 3 Clientes en Cartera
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Hasta 2 Expedientes Activos por Cliente
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        500 MB Almacenamiento Digital
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Portal del Cliente y Agenda Procesal
+                                    </li>
+                                </ul>
+                            </div>
                             <Link
                                 href="/auth/register"
-                                className="mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-primary ring-1 ring-inset ring-primary hover:ring-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                className="mt-8 block rounded-md px-3.5 py-2.5 text-center text-sm font-semibold text-primary ring-1 ring-inset ring-primary hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
                             >
-                                Comenzar
+                                Comenzar Gratis
                             </Link>
                         </div>
 
-                        {/* SOLO Plan - Destacado */}
-                        <div className="relative rounded-3xl bg-primary p-8 shadow-2xl ring-1 ring-gray-900/10 sm:p-10">
-                            <div className="absolute -top-5 left-0 right-0 mx-auto w-32 rounded-full bg-primary/10 px-3 py-2 text-sm font-semibold text-primary ring-1 ring-inset ring-primary/20 text-center">
+                        {/* SOLO Plan */}
+                        <div className="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 sm:p-10 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-primary">
+                            <div>
+                                <h3 className="text-base font-semibold leading-7 text-primary">Abogado Independiente</h3>
+                                <p className="mt-4 flex items-baseline gap-x-2">
+                                    <span className="text-5xl font-bold tracking-tight text-gray-900">$399</span>
+                                    <span className="text-base text-gray-500">MXN/mes</span>
+                                </p>
+                                <p className="mt-6 text-base leading-7 text-gray-600">Para postulantes y litigantes en ejercicio individual</p>
+                                <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-gray-600">
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        1 Abogado (Titular)
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Expedientes y Casos Ilimitados
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Clientes en Cartera Ilimitados
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        10 GB Almacenamiento Seguro
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Cobranza, Recibos y Estados de Cuenta
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-primary" />
+                                        Extractor Inteligente SPEI (OCR de recibos)
+                                    </li>
+                                </ul>
+                            </div>
+                            <Link
+                                href="/auth/register"
+                                className="mt-8 block rounded-md bg-primary px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary transition-colors"
+                            >
+                                Elegir Plan Abogado
+                            </Link>
+                        </div>
+
+                        {/* FIRM Plan - Destacado */}
+                        <div className="relative flex flex-col justify-between rounded-3xl bg-primary p-8 shadow-2xl ring-1 ring-gray-900/10 sm:p-10 text-white">
+                            <div className="absolute -top-5 left-0 right-0 mx-auto w-36 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-gray-950 text-center uppercase tracking-wider shadow">
                                 Recomendado
                             </div>
-                            <h3 className="text-base font-semibold leading-7 text-white">Solo</h3>
-                            <p className="mt-4 flex items-baseline gap-x-2">
-                                <span className="text-5xl font-bold tracking-tight text-white">$400</span>
-                                <span className="text-base text-white/80">MXN/mes</span>
-                            </p>
-                            <p className="mt-6 text-base leading-7 text-white/80">Para abogados independientes y pequeños despachos</p>
-                            <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-white/90">
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    1 Usuario
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    Clientes Ilimitados
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    Casos Ilimitados
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    10 GB Almacenamiento
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    Portal para Clientes
-                                </li>
-                                <li className="flex gap-x-3">
-                                    <Check className="h-6 w-5 flex-none text-white" />
-                                    Soporte Prioritario
-                                </li>
-                            </ul>
+                            <div>
+                                <h3 className="text-base font-semibold leading-7 text-white">Despacho Jurídico</h3>
+                                <p className="mt-4 flex items-baseline gap-x-2">
+                                    <span className="text-5xl font-bold tracking-tight text-white">$899</span>
+                                    <span className="text-base text-white/80">MXN/mes</span>
+                                </p>
+                                <p className="mt-6 text-base leading-7 text-white/80">Para despachos, firmas legales y equipos de litigio</p>
+                                <ul role="list" className="mt-8 space-y-3 text-sm leading-6 text-white/90">
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Hasta 5 Abogados (Titular + 4 Colaboradores)
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Expedientes y Clientes Ilimitados
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        50 GB Almacenamiento de Alta Capacidad
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Asignación de Casos y Secreto Profesional
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Panel Directivo de Cobranza y Rendimiento
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Validación DGP-SEP y Bitácora Forense
+                                    </li>
+                                    <li className="flex gap-x-3">
+                                        <Check className="h-6 w-5 flex-none text-white" />
+                                        Razón Social y Membrete Personalizado
+                                    </li>
+                                </ul>
+                            </div>
                             <Link
-                                href="#contact"
-                                className="mt-8 block rounded-md bg-white px-3.5 py-2.5 text-center text-sm font-semibold text-primary shadow-sm hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                                href="/auth/register"
+                                className="mt-8 block rounded-md bg-white px-3.5 py-2.5 text-center text-sm font-semibold text-primary shadow-sm hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-colors"
                             >
-                                Contáctanos
+                                Contratar Plan Despacho
                             </Link>
                         </div>
                     </div>

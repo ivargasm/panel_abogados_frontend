@@ -56,12 +56,11 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/Store";
 import { toast } from "sonner";
 import {
     API_URL,
-    createCheckoutSession,
-    createCustomerPortalSession,
     getTeamMembers,
     updateTeamMember,
     deactivateTeamMember,
@@ -82,7 +81,7 @@ import {
 import { formatCurrencyMXN } from "@/lib/legal-domain";
 import type { TeamMember, TeamInvitation } from "@/app/types";
 
-type Section = "profile" | "team" | "general" | "security" | "subscription";
+type Section = "profile" | "team" | "general" | "security";
 
 export default function SettingsLayout() {
     const { user } = useAuthStore();
@@ -94,13 +93,12 @@ export default function SettingsLayout() {
         { id: "security" as Section, label: "Seguridad", icon: Lock, ownerOnly: false },
         { id: "team" as Section, label: "Equipo y Colaboradores", icon: Users, ownerOnly: true },
         { id: "general" as Section, label: "Despacho y Apariencia", icon: Building2, ownerOnly: true },
-        { id: "subscription" as Section, label: "Suscripción", icon: CreditCard, ownerOnly: true },
     ];
 
     const menuItems = allMenuItems.filter((item) => !item.ownerOnly || isOwner);
 
     useEffect(() => {
-        if (!isOwner && ["team", "general", "subscription"].includes(activeSection)) {
+        if (!isOwner && ["team", "general"].includes(activeSection)) {
             setActiveSection("profile");
         }
     }, [isOwner, activeSection]);
@@ -135,7 +133,6 @@ export default function SettingsLayout() {
                 {activeSection === "security" && <SecuritySection />}
                 {isOwner && activeSection === "team" && <TeamSection />}
                 {isOwner && activeSection === "general" && <GeneralSection />}
-                {isOwner && activeSection === "subscription" && <SubscriptionSection />}
             </div>
         </div>
     );
@@ -458,7 +455,9 @@ function ProfileSection() {
 
 function TeamSection() {
     const { user } = useAuthStore();
+    const router = useRouter();
     const isOwner = user?.role === "owner";
+    const isFirm = user?.subscription_plan === "firm";
     const [members, setMembers] = useState<TeamMember[]>([]);
     const [invitations, setInvitations] = useState<TeamInvitation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -736,6 +735,20 @@ function TeamSection() {
         }
     };
 
+    const handleOpenCreateModal = () => {
+        if (!isFirm) {
+            toast.info("Función del Plan Despacho Jurídico", {
+                description: "La incorporación y gestión de equipo requiere el Plan Despacho Jurídico (hasta 5 integrantes).",
+                action: {
+                    label: "Ver Planes",
+                    onClick: () => router.push("/dashboard/subscription"),
+                },
+            });
+            return;
+        }
+        setIsCreateOpen(true);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -746,7 +759,7 @@ function TeamSection() {
                     </p>
                 </div>
                 {isOwner && (
-                    <Button onClick={() => setIsCreateOpen(true)}>
+                    <Button onClick={handleOpenCreateModal}>
                         <Plus className="mr-2 h-4 w-4" />
                         Registrar Colaborador
                     </Button>
@@ -754,7 +767,7 @@ function TeamSection() {
             </div>
             <Separator />
 
-            {isOwner && (
+            {isOwner && isFirm && (
                 <div className="flex items-center gap-2 border-b pb-2">
                     <Button
                         variant={teamSubtab === "members" ? "secondary" : "ghost"}
@@ -780,7 +793,7 @@ function TeamSection() {
                 </div>
             )}
 
-            {teamSubtab === "members" ? (
+            {!isFirm || teamSubtab === "members" ? (
                 <>
                     <Card>
                         <CardHeader>
@@ -1548,124 +1561,6 @@ function SecuritySection() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
-    );
-}
-
-function SubscriptionSection() {
-    const { user } = useAuthStore();
-    const [loading, setLoading] = useState(false);
-
-    const handleUpgrade = async () => {
-        setLoading(true);
-        try {
-            const { checkout_url } = await createCheckoutSession(API_URL);
-            window.location.href = checkout_url;
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "No se pudo iniciar la suscripción");
-            setLoading(false);
-        }
-    };
-
-    const handleManageSubscription = async () => {
-        setLoading(true);
-        try {
-            const { portal_url } = await createCustomerPortalSession(API_URL);
-            window.location.href = portal_url;
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "No se pudo abrir el portal de gestión");
-            setLoading(false);
-        }
-    };
-
-    const plans = [
-        {
-            name: "Plan Inicial (Gratuito)",
-            price: "$0",
-            period: "mes",
-            features: [
-                "Hasta 2 integrantes en el despacho",
-                "Hasta 5 clientes activos",
-                "Hasta 3 expedientes en trámite",
-                "500 MB de archivo digital y Portal del Cliente",
-            ],
-            current: user?.subscription_plan === "free",
-        },
-        {
-            name: "Plan Profesional / Despacho",
-            price: "$499",
-            period: "mes MXN",
-            features: [
-                "Colaboradores y expedientes ampliados",
-                "Clientes ilimitados y Portal del Cliente",
-                "10 GB+ para promociones, acuerdos y pruebas",
-                "Estados de cuenta y alertas de términos fatales",
-            ],
-            current: user?.subscription_plan === "solo" || user?.subscription_plan === "firm",
-            popular: true,
-        },
-    ];
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Suscripción del Despacho</h1>
-                <p className="text-muted-foreground">Consulta la capacidad contratada de tu firma jurídica.</p>
-            </div>
-            <Separator />
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Estado Actual</CardTitle>
-                    <CardDescription>
-                        Plan activo: <span className="font-semibold uppercase">{user?.subscription_plan}</span> •{" "}
-                        Estatus: <span className="font-semibold capitalize">{user?.subscription_status}</span>
-                    </CardDescription>
-                </CardHeader>
-                {user?.subscription_plan !== "free" && (
-                    <CardContent>
-                        <Button onClick={handleManageSubscription} disabled={loading} variant="outline">
-                            Administrar método de pago en Stripe
-                        </Button>
-                    </CardContent>
-                )}
-            </Card>
-
-            <div className="grid gap-6 md:grid-cols-2">
-                {plans.map((plan) => (
-                    <Card key={plan.name} className={plan.popular ? "border-primary shadow-md" : ""}>
-                        <CardHeader>
-                            {plan.popular && (
-                                <div className="text-xs font-semibold text-primary mb-1 uppercase">Recomendado</div>
-                            )}
-                            <CardTitle className="text-xl">{plan.name}</CardTitle>
-                            <div className="mt-2">
-                                <span className="text-3xl font-bold">{plan.price}</span>
-                                <span className="text-muted-foreground text-sm"> / {plan.period}</span>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <ul className="space-y-2">
-                                {plan.features.map((feature, index) => (
-                                    <li key={index} className="flex items-start gap-2">
-                                        <Check className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                                        <span className="text-sm">{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            {plan.current ? (
-                                <Button className="w-full" disabled variant="secondary">
-                                    Plan Activo
-                                </Button>
-                            ) : (
-                                <Button className="w-full" onClick={handleUpgrade} disabled={loading}>
-                                    Actualizar Plan
-                                </Button>
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
         </div>
     );
 }
