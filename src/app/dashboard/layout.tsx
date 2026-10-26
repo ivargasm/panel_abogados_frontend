@@ -38,6 +38,16 @@ export default function DashboardLayout({
         document.documentElement.classList.toggle("dark");
     };
 
+    const isOwner = user?.role === "owner";
+    const mobileNavLinks = [
+        ...DASHBOARD_NAV_LINKS.filter((item) => !item.ownerOnly || isOwner),
+        {
+            href: "/dashboard/settings",
+            label: isOwner ? "Configuración y Equipo" : "Mi Perfil y Ajustes",
+            icon: Settings,
+        },
+    ];
+
     return (
         <ProtectedRoute allowedRoles={["owner", "lawyer"]}>
             <SessionExpiryWatcher />
@@ -67,7 +77,7 @@ export default function DashboardLayout({
                             </div>
 
                             <nav className="mt-4 flex-1 space-y-1">
-                                {[...DASHBOARD_NAV_LINKS, { href: "/dashboard/settings", label: "Configuración y Equipo", icon: Settings }].map((item) => {
+                                {mobileNavLinks.map((item) => {
                                     const active = item.href === "/dashboard"
                                         ? pathname === "/dashboard"
                                         : pathname?.startsWith(item.href);

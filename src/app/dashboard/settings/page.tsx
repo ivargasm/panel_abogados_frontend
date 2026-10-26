@@ -85,15 +85,25 @@ import type { TeamMember, TeamInvitation } from "@/app/types";
 type Section = "profile" | "team" | "general" | "security" | "subscription";
 
 export default function SettingsLayout() {
+    const { user } = useAuthStore();
+    const isOwner = user?.role === "owner";
     const [activeSection, setActiveSection] = useState<Section>("profile");
 
-    const menuItems = [
-        { id: "profile" as Section, label: "Perfil Profesional", icon: User },
-        { id: "team" as Section, label: "Equipo y Colaboradores", icon: Users },
-        { id: "general" as Section, label: "Despacho y Apariencia", icon: Building2 },
-        { id: "security" as Section, label: "Seguridad", icon: Lock },
-        { id: "subscription" as Section, label: "Suscripción", icon: CreditCard },
+    const allMenuItems = [
+        { id: "profile" as Section, label: "Perfil Profesional", icon: User, ownerOnly: false },
+        { id: "security" as Section, label: "Seguridad", icon: Lock, ownerOnly: false },
+        { id: "team" as Section, label: "Equipo y Colaboradores", icon: Users, ownerOnly: true },
+        { id: "general" as Section, label: "Despacho y Apariencia", icon: Building2, ownerOnly: true },
+        { id: "subscription" as Section, label: "Suscripción", icon: CreditCard, ownerOnly: true },
     ];
+
+    const menuItems = allMenuItems.filter((item) => !item.ownerOnly || isOwner);
+
+    useEffect(() => {
+        if (!isOwner && ["team", "general", "subscription"].includes(activeSection)) {
+            setActiveSection("profile");
+        }
+    }, [isOwner, activeSection]);
 
     return (
         <div className="flex flex-col md:flex-row gap-8 w-full">
@@ -122,10 +132,10 @@ export default function SettingsLayout() {
 
             <div className="flex-1 min-w-0">
                 {activeSection === "profile" && <ProfileSection />}
-                {activeSection === "team" && <TeamSection />}
-                {activeSection === "general" && <GeneralSection />}
                 {activeSection === "security" && <SecuritySection />}
-                {activeSection === "subscription" && <SubscriptionSection />}
+                {isOwner && activeSection === "team" && <TeamSection />}
+                {isOwner && activeSection === "general" && <GeneralSection />}
+                {isOwner && activeSection === "subscription" && <SubscriptionSection />}
             </div>
         </div>
     );

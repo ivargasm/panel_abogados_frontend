@@ -14,6 +14,7 @@ import {
     Scale,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuthStore } from "@/app/store/Store";
 
 export const DASHBOARD_NAV_LINKS = [
     { href: "/dashboard", label: "Resumen General", icon: LayoutDashboard },
@@ -21,11 +22,15 @@ export const DASHBOARD_NAV_LINKS = [
     { href: "/dashboard/cases", label: "Expedientes", icon: Briefcase },
     { href: "/dashboard/calendar", label: "Agenda Procesal", icon: Calendar },
     { href: "/dashboard/billing", label: "Honorarios y Cobranza", icon: BadgeDollarSign },
-    { href: "/dashboard/subscription", label: "Plan del Despacho", icon: Zap },
+    { href: "/dashboard/subscription", label: "Plan del Despacho", icon: Zap, ownerOnly: true },
 ];
 
 export default function NavLinks() {
     const pathname = usePathname();
+    const { user } = useAuthStore();
+    const isOwner = user?.role === "owner";
+
+    const visibleLinks = DASHBOARD_NAV_LINKS.filter((link) => !link.ownerOnly || isOwner);
 
     const isActive = (href: string) => {
         if (href === "/dashboard") return pathname === "/dashboard";
@@ -43,7 +48,7 @@ export default function NavLinks() {
                     <span className="sr-only">LexControl</span>
                 </Link>
 
-                {DASHBOARD_NAV_LINKS.map((link) => {
+                {visibleLinks.map((link) => {
                     const active = isActive(link.href);
                     return (
                         <Tooltip key={link.href}>
@@ -76,10 +81,10 @@ export default function NavLinks() {
                             }`}
                         >
                             <Settings className="h-5 w-5" />
-                            <span className="sr-only">Configuración y Equipo</span>
+                            <span className="sr-only">{isOwner ? "Configuración y Equipo" : "Mi Perfil y Ajustes"}</span>
                         </Link>
                     </TooltipTrigger>
-                    <TooltipContent side="right">Configuración y Equipo</TooltipContent>
+                    <TooltipContent side="right">{isOwner ? "Configuración y Equipo" : "Mi Perfil y Ajustes"}</TooltipContent>
                 </Tooltip>
             </nav>
         </TooltipProvider>
