@@ -26,18 +26,31 @@ export default function LoginPage() {
             const params = new URLSearchParams(window.location.search);
             if (params.get("session_expired") === "true") {
                 setSessionExpiredNotice(true);
+                useAuthStore.setState({ user: null, userAuth: false, authChecked: true });
             }
         }
     }, []);
 
     useEffect(() => {
         const validateAndRedirect = async () => {
+            if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get("session_expired") === "true") {
+                    return;
+                }
+            }
+
             const state = useAuthStore.getState();
             if (state.userAuth && state.user) {
-                if (state.user.role === 'client') {
-                    router.push('/portal-cliente');
-                } else {
-                    router.push('/dashboard');
+                // Verificar que la cookie de sesión sea realmente válida en el servidor
+                await state.userValid();
+                const freshState = useAuthStore.getState();
+                if (freshState.userAuth && freshState.user) {
+                    if (freshState.user.role === 'client') {
+                        router.push('/portal-cliente');
+                    } else {
+                        router.push('/dashboard');
+                    }
                 }
             }
         };

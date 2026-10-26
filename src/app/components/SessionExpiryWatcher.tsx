@@ -3,7 +3,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, RefreshCw, LogOut } from "lucide-react";
-import { getSessionStatus, refreshSession } from "@/app/lib/api";
+import { getSessionStatus, refreshSession, logout as logoutApi } from "@/app/lib/api";
+import { useAuthStore } from "@/app/store/Store";
+import { toast } from "sonner";
 
 const WARNING_THRESHOLD_SECONDS = 300; // 5 minutos antes de expirar
 
@@ -16,10 +18,16 @@ export default function SessionExpiryWatcher() {
     const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleLogout = useCallback(() => {
+    const handleLogout = useCallback(async () => {
         setIsOpen(false);
-        router.push("/auth/login?session_expired=true");
-    }, [router]);
+        try {
+            await logoutApi();
+        } catch {
+            // Silencioso ante fallos de red
+        }
+        useAuthStore.setState({ user: null, userAuth: false, authChecked: true });
+        window.location.href = "/auth/login?session_expired=true";
+    }, []);
 
     const handleContinue = async () => {
         setIsRefreshing(true);
@@ -37,7 +45,7 @@ export default function SessionExpiryWatcher() {
                 setSecondsLeft(status.remaining_seconds);
             }
         } catch (err) {
-            console.error("Error al renovar sesión:", err);
+            toast.error(err instanceof Error ? err.message : "Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
             handleLogout();
         } finally {
             setIsRefreshing(false);
@@ -48,6 +56,9 @@ export default function SessionExpiryWatcher() {
         try {
             const status = await getSessionStatus();
             if (!status.authenticated) {
+                if (useAuthStore.getState().userAuth) {
+                    handleLogout();
+                }
                 return;
             }
 
