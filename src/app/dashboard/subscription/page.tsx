@@ -4,15 +4,33 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useAuthStore } from "@/app/store/Store";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Star, Zap, Users, ShieldCheck } from "lucide-react";
-import { API_URL, createCheckoutSession, createCustomerPortalSession } from "@/app/lib/api";
+import { CheckCircle, Star, Zap, Users, ShieldCheck, CreditCard, Sparkles, ArrowRight } from "lucide-react";
+import {
+    API_URL,
+    createCheckoutSession,
+    createCustomerPortalSession,
+    updateSubscriptionPlan,
+} from "@/app/lib/api";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UsageStats {
     plan: string;
     status: string;
+    billing_cycle?: "monthly" | "yearly";
+    has_active_subscription?: boolean;
+    card_brand?: string | null;
+    card_last4?: string | null;
+    current_period_end?: number | null;
     usage: {
         clients: number;
         cases: number;
@@ -61,6 +79,16 @@ function SubscriptionPageBody() {
     const router = useRouter();
     const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
 
+    const [changePlanModal, setChangePlanModal] = useState<{
+        isOpen: boolean;
+        targetPlan: "solo" | "firm";
+        targetBillingCycle: "monthly" | "yearly";
+    }>({
+        isOpen: false,
+        targetPlan: "solo",
+        targetBillingCycle: "monthly",
+    });
+
     useEffect(() => {
         const paymentStatus = searchParams.get("payment");
         if (paymentStatus === "canceled") {
@@ -80,6 +108,9 @@ function SubscriptionPageBody() {
             if (response.ok) {
                 const data = await response.json();
                 setUsageStats(data);
+                if (data.billing_cycle) {
+                    setBillingCycle(data.billing_cycle);
+                }
             }
         } catch (error) {
             console.error("Error fetching usage stats:", error);
@@ -99,6 +130,38 @@ function SubscriptionPageBody() {
         }
     };
 
+    const handleRequestPlanChange = (targetPlan: "solo" | "firm", cycle: "monthly" | "yearly") => {
+        if (usageStats?.has_active_subscription) {
+            setChangePlanModal({
+                isOpen: true,
+                targetPlan,
+                targetBillingCycle: cycle,
+            });
+        } else {
+            handleUpgrade(targetPlan);
+        }
+    };
+
+    const handleConfirmPlanChange = async () => {
+        setIsLoading(true);
+        try {
+            const res = await updateSubscriptionPlan(
+                changePlanModal.targetPlan,
+                changePlanModal.targetBillingCycle,
+                url
+            );
+            toast.success(res.message || "Plan actualizado exitosamente", {
+                description: "Stripe ha aplicado el prorrateo proporcional a tu suscripción.",
+            });
+            setChangePlanModal((prev) => ({ ...prev, isOpen: false }));
+            await fetchUsageStats();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "No se pudo actualizar el plan.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleManageSubscription = async () => {
         setIsLoading(true);
         try {
@@ -113,6 +176,7 @@ function SubscriptionPageBody() {
     };
 
     const currentPlan = usageStats?.plan || user?.subscription_plan || "free";
+    const currentSubCycle = usageStats?.billing_cycle || "monthly";
     const isSubscribed = currentPlan === "solo" || currentPlan === "firm";
     const isOwner = user?.role === "owner";
 
@@ -152,11 +216,25 @@ function SubscriptionPageBody() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Consumo Actual del Despacho</CardTitle>
-                        <CardDescription className="flex items-center gap-2 pt-1">
-                            <span>Plan activo:</span>
-                            <Badge variant="default" className="uppercase">{usageStats.plan}</Badge>
-                            <span>Estado:</span>
-                            <Badge variant="outline">{usageStats.status}</Badge>
+                        <CardDescription className="flex flex-wrap items-center gap-3 pt-1">
+                            <span className="flex items-center gap-1.5">
+                                <span>Plan activo:</span>
+                                <Badge variant="default" className="uppercase font-semibold">
+                                    {usageStats.plan} {usageStats.billing_cycle ? `(${usageStats.billing_cycle === 'yearly' ? 'Anual' : 'Mensual'})` : ''}
+                                </Badge>
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span>Estado:</span>
+                                <Badge variant="outline" className="capitalize">{usageStats.status}</Badge>
+                            </span>
+                            {usageStats.card_last4 && (
+                                <span className="flex items-center gap-1.5 text-xs text-muted-foreground border-l pl-3">
+                                    <CreditCard className="h-3.5 w-3.5 text-primary" />
+                                    <span>
+                                        {usageStats.card_brand ? usageStats.card_brand.toUpperCase() : "Tarjeta"} •••• {usageStats.card_last4}
+                                    </span>
+                                </span>
+                            )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -293,15 +371,30 @@ function SubscriptionPageBody() {
                                 Solo el titular puede modificar el plan
                             </Button>
                         ) : currentPlan === "solo" ? (
-                            <Button onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
-                                {isLoading ? "Cargando..." : "Administrar Suscripción"}
-                            </Button>
+                            currentSubCycle === billingCycle ? (
+                                <Button onClick={handleManageSubscription} disabled={isLoading} variant="outline" className="w-full cursor-pointer">
+                                    {isLoading ? "Cargando..." : "Administrar Suscripción"}
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={() => handleRequestPlanChange("solo", billingCycle)}
+                                    disabled={isLoading}
+                                    className="w-full cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                    {isLoading ? "Procesando..." : billingCycle === "yearly" ? "Cambiar a Pago Anual (Ahorra $798)" : "Cambiar a Pago Mensual"}
+                                </Button>
+                            )
                         ) : currentPlan === "firm" ? (
-                            <Button variant="outline" onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
-                                {isLoading ? "Cargando..." : "Gestionar en Portal"}
+                            <Button
+                                variant="outline"
+                                onClick={() => handleRequestPlanChange("solo", billingCycle)}
+                                disabled={isLoading}
+                                className="w-full cursor-pointer"
+                            >
+                                Cambiar a Plan Abogado
                             </Button>
                         ) : (
-                            <Button onClick={() => handleUpgrade("solo")} disabled={isLoading} className="w-full cursor-pointer">
+                            <Button onClick={() => handleRequestPlanChange("solo", billingCycle)} disabled={isLoading} className="w-full cursor-pointer">
                                 {isLoading ? "Conectando..." : "Elegir Plan Abogado"}
                             </Button>
                         )}
@@ -355,21 +448,97 @@ function SubscriptionPageBody() {
                                 Solo el titular puede modificar el plan
                             </Button>
                         ) : currentPlan === "firm" ? (
-                            <Button onClick={handleManageSubscription} disabled={isLoading} className="w-full cursor-pointer">
-                                {isLoading ? "Cargando..." : "Administrar Suscripción"}
-                            </Button>
+                            currentSubCycle === billingCycle ? (
+                                <Button onClick={handleManageSubscription} disabled={isLoading} variant="outline" className="w-full cursor-pointer">
+                                    {isLoading ? "Cargando..." : "Administrar Suscripción"}
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={() => handleRequestPlanChange("firm", billingCycle)}
+                                    disabled={isLoading}
+                                    className="w-full cursor-pointer bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
+                                >
+                                    {isLoading ? "Procesando..." : billingCycle === "yearly" ? "Cambiar a Pago Anual (Ahorra $1,798)" : "Cambiar a Pago Mensual"}
+                                </Button>
+                            )
                         ) : currentPlan === "solo" ? (
-                            <Button onClick={() => handleUpgrade("firm")} disabled={isLoading} className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90">
-                                {isLoading ? "Conectando..." : "Mejorar a Plan Despacho"}
+                            <Button
+                                onClick={() => handleRequestPlanChange("firm", billingCycle)}
+                                disabled={isLoading}
+                                className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90 flex items-center justify-center gap-2"
+                            >
+                                <Sparkles className="h-4 w-4 text-amber-300" />
+                                {isLoading ? "Conectando..." : billingCycle === "yearly" ? "Mejorar a Despacho Anual" : "Mejorar a Despacho Mensual"}
                             </Button>
                         ) : (
-                            <Button onClick={() => handleUpgrade("firm")} disabled={isLoading} className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90">
+                            <Button
+                                onClick={() => handleRequestPlanChange("firm", billingCycle)}
+                                disabled={isLoading}
+                                className="w-full cursor-pointer bg-primary text-white hover:bg-primary/90"
+                            >
                                 {isLoading ? "Conectando..." : "Contratar Plan Despacho"}
                             </Button>
                         )}
                     </CardFooter>
                 </Card>
             </div>
+
+            {/* Modal de Confirmación de Cambio de Plan con Prorrateo */}
+            <Dialog open={changePlanModal.isOpen} onOpenChange={(open) => setChangePlanModal((prev) => ({ ...prev, isOpen: open }))}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            Actualización con Prorrateo Automático
+                        </DialogTitle>
+                        <DialogDescription asChild>
+                            <div className="pt-2 text-sm text-foreground/80 space-y-3">
+                                <p>
+                                    Estás a punto de modificar tu suscripción al{" "}
+                                    <strong className="text-primary font-semibold">
+                                        Plan {changePlanModal.targetPlan === "firm" ? "Despacho Jurídico" : "Abogado Independiente"}{" "}
+                                        ({changePlanModal.targetBillingCycle === "yearly" ? "Anual" : "Mensual"})
+                                    </strong>.
+                                </p>
+                                <div className="rounded-lg border bg-muted/40 p-3 space-y-1.5 text-xs">
+                                    <div className="font-semibold text-foreground flex items-center gap-1.5">
+                                        <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                                        Prorrateo Inteligente de Stripe
+                                    </div>
+                                    <p className="text-muted-foreground">
+                                        Stripe calculará automáticamente el saldo a tu favor por los días restantes de tu periodo actual y solo cargará la diferencia proporcional a tu método de pago registrado.
+                                    </p>
+                                    {usageStats?.card_last4 && (
+                                        <div className="font-medium text-foreground pt-1 flex items-center gap-1.5">
+                                            <CreditCard className="h-3.5 w-3.5 text-primary" />
+                                            Se cargará a: {usageStats.card_brand ? usageStats.card_brand.toUpperCase() : "Tarjeta"} terminada en •••• {usageStats.card_last4}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    Tus nuevos beneficios y límites de almacenamiento y expedientes se activarán de inmediato.
+                                </p>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => setChangePlanModal((prev) => ({ ...prev, isOpen: false }))}
+                            disabled={isLoading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleConfirmPlanChange}
+                            disabled={isLoading}
+                            className="bg-primary text-white hover:bg-primary/90"
+                        >
+                            {isLoading ? "Procesando en Stripe..." : "Confirmar y Actualizar"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

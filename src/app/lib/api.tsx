@@ -813,6 +813,23 @@ export async function createCustomerPortalSession(url: string = API_URL): Promis
     return res.json();
 }
 
+export async function updateSubscriptionPlan(
+    plan: "solo" | "firm",
+    billingCycle: "monthly" | "yearly" = "monthly",
+    url: string = API_URL
+): Promise<{ success: boolean; message: string; plan: string; billing_cycle: string }> {
+    const res = await fetch(`${url}/api/subscriptions/update-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ plan, billing_cycle: billingCycle }),
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "No se pudo actualizar el plan de suscripción."));
+    }
+    return res.json();
+}
+
 // --- API para Facturación y Cobranza ---
 
 export async function getBillingStats(url: string = API_URL) {
