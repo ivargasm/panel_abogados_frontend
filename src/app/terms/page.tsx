@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Scale, ShieldAlert, CreditCard, Clock, Lock, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Scale, ShieldAlert, CreditCard, Clock, Lock, FileText } from 'lucide-react';
 
 export default function TermsPage() {
     return (
