@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Building2, Check, ChevronsUpDown, Plus, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Building2, Check, ChevronsUpDown, Plus, ShieldCheck, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/app/store/Store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import { getMyWorkspaces, switchWorkspace, createWorkspace, WorkspaceItem } from
 import { toast } from "sonner";
 
 export default function WorkspaceSwitcher() {
+    const router = useRouter();
     const { user } = useAuthStore();
     const [workspaces, setWorkspaces] = useState<WorkspaceItem[]>([]);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -179,16 +181,29 @@ export default function WorkspaceSwitcher() {
 
                     <DropdownMenuSeparator />
 
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setDropdownOpen(false);
-                            setIsCreateModalOpen(true);
-                        }}
-                        className="cursor-pointer gap-2 text-primary focus:text-primary font-medium p-2.5 rounded-md hover:bg-primary/5"
-                    >
-                        <Plus className="h-4 w-4" />
-                        <span>Crear Nuevo Despacho</span>
-                    </DropdownMenuItem>
+                    {workspaces.some((ws) => ws.role === "owner") ? (
+                        <DropdownMenuItem
+                            onClick={() => {
+                                setDropdownOpen(false);
+                                router.push("/dashboard/subscription");
+                            }}
+                            className="cursor-pointer gap-2 text-emerald-600 dark:text-emerald-400 focus:text-emerald-700 font-medium p-2.5 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                        >
+                            <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+                            <span>Mejorar Plan / Suscripción</span>
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            onClick={() => {
+                                setDropdownOpen(false);
+                                setIsCreateModalOpen(true);
+                            }}
+                            className="cursor-pointer gap-2 text-primary focus:text-primary font-medium p-2.5 rounded-md hover:bg-primary/5"
+                        >
+                            <Plus className="h-4 w-4 shrink-0" />
+                            <span>Crear Mi Despacho Titular</span>
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
 
