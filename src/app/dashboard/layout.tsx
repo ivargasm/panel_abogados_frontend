@@ -8,7 +8,6 @@ import { LogOut, Menu, Moon, Scale, Settings, Sun, UserCircle, X } from "lucide-
 import { useAuthStore } from "@/app/store/Store";
 import ProtectedRoute from "@/app/components/ProtectedRoutes";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import NavLinks, { DASHBOARD_NAV_LINKS } from "@/app/components/NavLinks";
 import SessionExpiryWatcher from "@/app/components/SessionExpiryWatcher";
+import WorkspaceSwitcher from "@/app/components/WorkspaceSwitcher";
 
 export default function DashboardLayout({
     children,
@@ -121,21 +121,7 @@ export default function DashboardLayout({
                             >
                                 <Menu className="h-5 w-5" />
                             </Button>
-                            <div className="truncate">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-sm sm:text-base text-foreground truncate">
-                                        {user?.workspace_name || "Despacho Jurídico"}
-                                    </span>
-                                    <Badge variant="outline" className="hidden md:inline-flex text-xs">
-                                        {user?.role === "owner" ? "Titular" : "Colaborador"}
-                                    </Badge>
-                                </div>
-                                {user?.professional_license && (
-                                    <p className="text-xs text-muted-foreground hidden sm:block">
-                                        Cédula Profesional: {user.professional_license}
-                                    </p>
-                                )}
-                            </div>
+                            <WorkspaceSwitcher />
                         </div>
 
                         <div className="flex items-center gap-2">

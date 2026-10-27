@@ -830,6 +830,58 @@ export async function updateSubscriptionPlan(
     return res.json();
 }
 
+// --- API para Multi-Despacho (Workspace Switcher) ---
+
+export interface WorkspaceItem {
+    id: number;
+    name: string;
+    role: "owner" | "lawyer" | "client";
+    job_title?: string | null;
+    is_active_workspace: boolean;
+    subscription_plan: string;
+    subscription_status: string;
+}
+
+export async function getMyWorkspaces(url: string = API_URL): Promise<WorkspaceItem[]> {
+    const res = await fetch(`${url}/api/workspaces/my-workspaces`, { credentials: "include" });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al obtener tus despachos."));
+    }
+    return res.json();
+}
+
+export async function switchWorkspace(
+    workspaceId: number,
+    url: string = API_URL
+): Promise<{ success: boolean; message: string; workspace: { id: number; name: string; role: string } }> {
+    const res = await fetch(`${url}/api/workspaces/switch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ workspace_id: workspaceId }),
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al cambiar de despacho."));
+    }
+    return res.json();
+}
+
+export async function createWorkspace(
+    name: string,
+    url: string = API_URL
+): Promise<{ success: boolean; message: string; workspace: { id: number; name: string; role: string } }> {
+    const res = await fetch(`${url}/api/workspaces/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+        throw new Error(await extractErrorMessage(res, "Error al crear el nuevo despacho."));
+    }
+    return res.json();
+}
+
 // --- API para Facturación y Cobranza ---
 
 export async function getBillingStats(url: string = API_URL) {
