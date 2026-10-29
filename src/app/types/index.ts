@@ -396,4 +396,5 @@ export type TeamInviteValidation = {
     job_title?: string | null;
     professional_license?: string | null;
     workspace_name: string;
+    is_existing_user?: boolean;
 };

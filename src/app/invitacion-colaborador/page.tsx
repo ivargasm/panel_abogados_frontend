@@ -74,14 +74,21 @@ export default function InvitacionColaboradorPage() {
             return;
         }
 
-        if (password.length < 8) {
-            setFormError("La contraseña debe tener al menos 8 caracteres.");
+        if (!password) {
+            setFormError("Por favor ingresa tu contraseña.");
             return;
         }
 
-        if (password !== confirmPassword) {
-            setFormError("Las contraseñas no coinciden.");
-            return;
+        if (!inviteData?.is_existing_user) {
+            if (password.length < 8) {
+                setFormError("La contraseña debe tener al menos 8 caracteres.");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                setFormError("Las contraseñas no coinciden.");
+                return;
+            }
         }
 
         setSubmitting(true);
@@ -198,12 +205,15 @@ export default function InvitacionColaboradorPage() {
                                 <div className="flex items-center gap-2 mb-3">
                                     <Shield className="w-4 h-4 text-blue-600" />
                                     <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                        Define tu Contraseña Personal
+                                        {inviteData.is_existing_user
+                                            ? "Confirma tu Contraseña para Vincularte"
+                                            : "Define tu Contraseña Personal"}
                                     </h3>
                                 </div>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                                    Por motivos de seguridad y secreto profesional, el titular del despacho no tiene acceso a tu contraseña.
-                                    Ingresa una contraseña que solo tú conozcas.
+                                    {inviteData.is_existing_user
+                                        ? "Ya cuentas con una cuenta en LexControl. Ingresa tu contraseña actual para unirte como colaborador a este despacho."
+                                        : "Por motivos de seguridad y secreto profesional, el titular del despacho no tiene acceso a tu contraseña. Ingresa una contraseña que solo tú conozcas."}
                                 </p>
 
                                 <form onSubmit={handleAccept} className="space-y-4">
@@ -214,7 +224,9 @@ export default function InvitacionColaboradorPage() {
                                     )}
 
                                     <div className="space-y-1.5">
-                                        <Label htmlFor="password">Nueva Contraseña (mínimo 8 caracteres)</Label>
+                                        <Label htmlFor="password">
+                                            {inviteData.is_existing_user ? "Tu Contraseña Actual" : "Nueva Contraseña (mínimo 8 caracteres)"}
+                                        </Label>
                                         <div className="relative">
                                             <Input
                                                 id="password"
@@ -223,7 +235,7 @@ export default function InvitacionColaboradorPage() {
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 placeholder="••••••••"
                                                 required
-                                                minLength={8}
+                                                minLength={inviteData.is_existing_user ? undefined : 8}
                                                 className="pr-10"
                                             />
                                             <button
@@ -236,25 +248,31 @@ export default function InvitacionColaboradorPage() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-                                        <Input
-                                            id="confirmPassword"
-                                            type={showPassword ? "text" : "password"}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            required
-                                            minLength={8}
-                                        />
-                                    </div>
+                                    {!inviteData.is_existing_user && (
+                                        <div className="space-y-1.5">
+                                            <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                                            <Input
+                                                id="confirmPassword"
+                                                type={showPassword ? "text" : "password"}
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                placeholder="••••••••"
+                                                required
+                                                minLength={8}
+                                            />
+                                        </div>
+                                    )}
 
                                     <Button
                                         type="submit"
                                         disabled={submitting}
                                         className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition-all"
                                     >
-                                        {submitting ? "Activando cuenta..." : "Activar mi cuenta y acceder al despacho"}
+                                        {submitting
+                                            ? "Vinculando..."
+                                            : inviteData.is_existing_user
+                                            ? "Unirme a este despacho"
+                                            : "Activar mi cuenta y acceder al despacho"}
                                     </Button>
                                 </form>
                             </div>
