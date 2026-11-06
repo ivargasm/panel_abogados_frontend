@@ -581,12 +581,9 @@ function TeamSection() {
             await loadInvitations();
             if (isOwner) {
                 try {
-                    const [perf, feed] = await Promise.all([
-                        getTeamPerformance(API_URL),
-                        getTeamActivityFeed(API_URL, 20),
-                    ]);
-                    setTeamPerf(perf);
-                    setActivityFeed(feed);
+                    const perfPromise = getTeamPerformance(API_URL).then(setTeamPerf).catch((e) => console.error("Error teamPerf:", e));
+                    const feedPromise = getTeamActivityFeed(API_URL, 20).then(setActivityFeed).catch((e) => console.error("Error activityFeed:", e));
+                    await Promise.all([perfPromise, feedPromise]);
                 } catch {
                     // Silencio ante permisos
                 }
